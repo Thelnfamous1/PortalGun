@@ -248,8 +248,8 @@ public class PortalGunItem extends Item implements GeoItem {
         portal.setOrientationAndSize(
             Vec3.atLowerCornerOf(rightDir.getNormal()),
             Vec3.atLowerCornerOf(upDir.getNormal()),
-            kind.getWidth() * 0.9,
-            kind.getHeight() * 0.9
+            kind.getWidth(),
+            kind.getHeight()
         );
         portal.descriptor = descriptor;
         portal.wallBox = placement.wallBox;
