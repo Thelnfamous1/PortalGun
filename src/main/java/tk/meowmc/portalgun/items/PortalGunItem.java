@@ -31,6 +31,7 @@ import qouteall.imm_ptl.core.McHelper;
 import qouteall.imm_ptl.core.compat.GravityChangerInterface;
 import qouteall.imm_ptl.core.portal.Portal;
 import qouteall.imm_ptl.core.portal.PortalManipulation;
+import qouteall.imm_ptl.core.portal.PortalUtils;
 import qouteall.q_misc_util.Helper;
 import qouteall.q_misc_util.my_util.AARotation;
 import qouteall.q_misc_util.my_util.IntBox;
@@ -170,7 +171,7 @@ public class PortalGunItem extends Item implements GeoItem {
         ItemStack itemStack = player.getItemInHand(hand);
         player.getCooldowns().addCooldown(this, COOLDOWN_TICKS);
         
-        PortalGunMod.PortalAwareRaytraceResult raytraceResult = PortalGunMod.portalAwareRayTrace(player, 100);
+        PortalUtils.PortalAwareRaytraceResult raytraceResult = PortalUtils.portalAwareRayTrace(player, 100);
         
         if (raytraceResult == null) {
             return false;
@@ -334,7 +335,7 @@ public class PortalGunItem extends Item implements GeoItem {
     private static PortalPlacement findPortalPlacement(
         ServerPlayer player,
         PortalGunRecord.PortalGunKind kind,
-        PortalGunMod.PortalAwareRaytraceResult raytraceResult
+        PortalUtils.PortalAwareRaytraceResult raytraceResult
     ) {
         BlockHitResult blockHit = raytraceResult.hitResult();
         ServerLevel world = ((ServerLevel) raytraceResult.world());
