@@ -10,5 +10,6 @@
   "key.portalgun.clearportals": "Clear Portals",
   "category.portalgun": "Portal Gun",
   "text.autoconfig.portalgun.option.enabled.portalFunneling": "Portal Funneling",
-  "text.autoconfig.portalgun.title": "Portal Gun Fabric Options"
+  "text.autoconfig.portalgun.title": "Portal Gun Fabric Options",
+  "portal_gun.limit_allowed_blocks": "Only works on these blocks:"
 }

@@ -4,11 +4,21 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.Holder;
+import net.minecraft.core.HolderSet;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.stats.Stats;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
@@ -18,6 +28,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.dimension.end.EndDragonFight;
 import net.minecraft.world.phys.BlockHitResult;
@@ -29,12 +40,12 @@ import org.apache.logging.log4j.Logger;
 import qouteall.imm_ptl.core.IPGlobal;
 import qouteall.imm_ptl.core.McHelper;
 import qouteall.imm_ptl.core.compat.GravityChangerInterface;
-import qouteall.imm_ptl.core.portal.Portal;
 import qouteall.imm_ptl.core.portal.PortalManipulation;
 import qouteall.imm_ptl.core.portal.PortalUtils;
 import qouteall.q_misc_util.Helper;
 import qouteall.q_misc_util.my_util.AARotation;
 import qouteall.q_misc_util.my_util.IntBox;
+import qouteall.q_misc_util.my_util.LimitedLogger;
 import software.bernie.geckolib.animatable.GeoItem;
 import software.bernie.geckolib.animatable.SingletonGeoAnimatable;
 import software.bernie.geckolib.animatable.client.RenderProvider;
@@ -50,15 +61,26 @@ import tk.meowmc.portalgun.client.renderer.PortalGunItemRenderer;
 import tk.meowmc.portalgun.entities.CustomPortal;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class PortalGunItem extends Item implements GeoItem {
     private static final Logger LOGGER = LogManager.getLogger();
+    private static final LimitedLogger LIMITED_LOGGER = new LimitedLogger(100);
     public static final int COOLDOWN_TICKS = 4;
+    public static final double SIZE_MULTIPLIER = 31.0 / 32.0;
     
     public final AnimatableInstanceCache cache = new SingletonAnimatableInstanceCache(this);
     
@@ -72,6 +94,66 @@ public class PortalGunItem extends Item implements GeoItem {
         SingletonGeoAnimatable.registerSyncedAnimatable(this);
     }
     
+    // example command: /give @p portalgun:portal_gun{allowedBlocks:["minecraft:stone"]} 1
+    // example command: /give @p portalgun:portal_gun{allowedBlocks:["#minecraft:ice"]} 1
+    public static record ItemInfo(List<String> allowedBlocks) {
+        public static ItemInfo fromTag(CompoundTag tag) {
+            List<String> allowedBlocks = new ArrayList<>();
+            ListTag listTag = tag.getList("allowedBlocks", 8);
+            for (Tag element : listTag) {
+                if (element instanceof StringTag stringTag) {
+                    allowedBlocks.add(stringTag.getAsString());
+                }
+            }
+            return new ItemInfo(allowedBlocks);
+        }
+        
+        public CompoundTag toTag() {
+            CompoundTag tag = new CompoundTag();
+            ListTag listTag = new ListTag();
+            for (String allowedBlock : allowedBlocks) {
+                listTag.add(StringTag.valueOf(allowedBlock));
+            }
+            tag.put("allowedBlocks", listTag);
+            return tag;
+        }
+        
+        public Stream<Block> getAllowedBlocks() {
+            return allowedBlocks.stream().flatMap(s -> parseBlockStr(s).stream());
+        }
+        
+        public static Collection<Block> parseBlockStr(String str) {
+            if (str.startsWith("#")) {
+                TagKey<Block> tagKey = TagKey.create(
+                    Registries.BLOCK,
+                    new ResourceLocation(str.substring(1))
+                );
+                Optional<HolderSet.Named<Block>> named = BuiltInRegistries.BLOCK.getTag(tagKey);
+                if (named.isEmpty()) {
+                    LIMITED_LOGGER.invoke(() -> {
+                        LOGGER.error("Unknown block tag: {}", str);
+                    });
+                    return Collections.emptyList();
+                }
+                else {
+                    HolderSet.Named<Block> holderSet = named.get();
+                    return holderSet.stream().map(Holder::value).toList();
+                }
+            }
+            else {
+                Optional<Block> optional = BuiltInRegistries.BLOCK.getOptional(new ResourceLocation(str));
+                if (optional.isPresent()) {
+                    return Collections.singletonList(optional.get());
+                }
+                else {
+                    LIMITED_LOGGER.invoke(() -> {
+                        LOGGER.error("Unknown block: {}", str);
+                    });
+                    return Collections.emptyList();
+                }
+            }
+        }
+    }
     
     // Utilise our own render hook to define our custom renderer
     @Override
@@ -138,6 +220,24 @@ public class PortalGunItem extends Item implements GeoItem {
         super.appendHoverText(stack, world, tooltip, context);
         
         tooltip.add(Component.translatable("item.portalgun.portal_gun_desc").withStyle(ChatFormatting.GOLD));
+        
+        CompoundTag tag = stack.getOrCreateTag();
+        ItemInfo itemInfo = ItemInfo.fromTag(tag);
+        
+        if (!itemInfo.allowedBlocks.isEmpty()) {
+            tooltip.add(Component.translatable("portal_gun.limit_allowed_blocks"));
+            int displayLimit = 5;
+            List<Block> allowedBlocks = itemInfo.getAllowedBlocks().limit(displayLimit + 1).toList();
+            for (int i = 0; i < displayLimit; i++) {
+                if (i < allowedBlocks.size()) {
+                    Block block = allowedBlocks.get(i);
+                    tooltip.add(block.getName().withStyle(ChatFormatting.LIGHT_PURPLE));
+                }
+            }
+            if (allowedBlocks.size() > displayLimit) {
+                tooltip.add(Component.literal("..."));
+            }
+        }
     }
     
     public InteractionResult onAttack(
@@ -180,7 +280,7 @@ public class PortalGunItem extends Item implements GeoItem {
         BlockHitResult blockHit = raytraceResult.hitResult();
         ServerLevel world = ((ServerLevel) raytraceResult.world());
         Direction wallFacing = blockHit.getDirection();
-    
+        
         if (!checkAction(player, world)) {
             return false;
         }
@@ -198,7 +298,15 @@ public class PortalGunItem extends Item implements GeoItem {
         
         PortalGunRecord.PortalGunKind kind = PortalGunRecord.PortalGunKind._2x1;
         
-        PortalPlacement placement = findPortalPlacement(player, kind, raytraceResult);
+        PortalGunRecord.PortalDescriptor descriptor =
+            new PortalGunRecord.PortalDescriptor(player.getUUID(), kind, side);
+    
+        ItemInfo itemInfo = ItemInfo.fromTag(itemStack.getOrCreateTag());
+        BiPredicate<Level, BlockPos> wallPredicate = getWallPredicate(itemInfo);
+        
+        PortalPlacement placement = findPortalPlacement(
+            player, kind, raytraceResult, descriptor, wallPredicate
+        );
         
         if (placement == null) {
             return false;
@@ -214,9 +322,6 @@ public class PortalGunItem extends Item implements GeoItem {
         );
         
         PortalGunRecord record = PortalGunRecord.get();
-        
-        PortalGunRecord.PortalDescriptor descriptor =
-            new PortalGunRecord.PortalDescriptor(player.getUUID(), kind, side);
         
         PortalGunRecord.PortalDescriptor otherSideDescriptor = descriptor.getTheOtherSide();
         
@@ -249,12 +354,13 @@ public class PortalGunItem extends Item implements GeoItem {
         portal.setOrientationAndSize(
             Vec3.atLowerCornerOf(rightDir.getNormal()),
             Vec3.atLowerCornerOf(upDir.getNormal()),
-            kind.getWidth(),
-            kind.getHeight()
+            kind.getWidth() * SIZE_MULTIPLIER,
+            kind.getHeight() * SIZE_MULTIPLIER
         );
         portal.descriptor = descriptor;
         portal.wallBox = placement.wallBox;
         portal.airBox = placement.areaBox;
+        portal.portalGunItemInfo = itemInfo;
         portal.thisSideUpdateCounter = thisSideInfo == null ? 0 : thisSideInfo.updateCounter();
         portal.otherSideUpdateCounter = otherSideInfo == null ? 0 : otherSideInfo.updateCounter();
         PortalManipulation.makePortalRound(portal, 20);
@@ -304,11 +410,18 @@ public class PortalGunItem extends Item implements GeoItem {
         return true;
     }
     
+    public static BiPredicate<Level, BlockPos> getWallPredicate(ItemInfo itemInfo) {
+        if (itemInfo.allowedBlocks.isEmpty()) {
+            // default predicate: only solid blocks
+            return (w, p) -> w.getBlockState(p).isSolidRender(w, p);
+        }
+        
+        Set<Block> allowedBlocks = itemInfo.getAllowedBlocks().collect(Collectors.toSet());
+        
+        return (w, p) -> allowedBlocks.contains(w.getBlockState(p).getBlock());
+    }
+    
     private static boolean checkAction(ServerPlayer player, ServerLevel world) {
-        // NOTE ImmPtl does not initialize ender dragon information immediately when
-        // opening end portal. This make `hasPreviouslyKilledDragon` return true if no player entered the end before.
-        // Is this a vanilla bug?
-        // This should be fixed in later ImmPtl versions.
         if (world.dimension() == Level.END) {
             EndDragonFight endDragonFight = world.dragonFight();
             if (endDragonFight != null) {
@@ -335,7 +448,9 @@ public class PortalGunItem extends Item implements GeoItem {
     private static PortalPlacement findPortalPlacement(
         ServerPlayer player,
         PortalGunRecord.PortalGunKind kind,
-        PortalUtils.PortalAwareRaytraceResult raytraceResult
+        PortalUtils.PortalAwareRaytraceResult raytraceResult,
+        PortalGunRecord.PortalDescriptor descriptor,
+        BiPredicate<Level, BlockPos> wallPredicate
     ) {
         BlockHitResult blockHit = raytraceResult.hitResult();
         ServerLevel world = ((ServerLevel) raytraceResult.world());
@@ -381,8 +496,8 @@ public class PortalGunItem extends Item implements GeoItem {
             IntBox wallArea = portalArea.getMoved(wallFacing.getOpposite().getNormal());
             
             if (PortalGunMod.isAreaClear(world, portalArea) &&
-                PortalGunMod.isWallValid(world, wallArea) &&
-                !portalExistsInArea(world, wallArea, wallFacing)
+                wallArea.fastStream().allMatch(p -> wallPredicate.test(world, p)) &&
+                !otherPortalExistsInArea(world, wallArea, wallFacing, descriptor)
             ) {
                 return new PortalPlacement(rot, portalArea, wallArea);
             }
@@ -391,7 +506,10 @@ public class PortalGunItem extends Item implements GeoItem {
         return null;
     }
     
-    private static boolean portalExistsInArea(Level world, IntBox wallArea, Direction wallFacing) {
+    private static boolean otherPortalExistsInArea(
+        Level world, IntBox wallArea, Direction wallFacing,
+        PortalGunRecord.PortalDescriptor descriptor
+    ) {
         List<CustomPortal> portals = McHelper.findEntitiesByBox(
             CustomPortal.class,
             world,
@@ -399,6 +517,7 @@ public class PortalGunItem extends Item implements GeoItem {
             IPGlobal.maxNormalPortalRadius,
             p -> p.getApproximateFacingDirection() == wallFacing
                 && IntBox.getIntersect(p.wallBox, wallArea) != null
+                && !Objects.equals(p.descriptor, descriptor)
         );
         return !portals.isEmpty();
     }

@@ -1,11 +1,13 @@
 package tk.meowmc.portalgun.entities;
 
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
+import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
+import net.minecraft.world.level.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -13,6 +15,10 @@ import qouteall.imm_ptl.core.portal.Portal;
 import qouteall.q_misc_util.my_util.IntBox;
 import tk.meowmc.portalgun.PortalGunMod;
 import tk.meowmc.portalgun.PortalGunRecord;
+import tk.meowmc.portalgun.items.PortalGunItem;
+
+import java.util.function.BiPredicate;
+import java.util.function.Predicate;
 
 public class CustomPortal extends Portal {
     private static final Logger LOGGER = LogManager.getLogger();
@@ -26,8 +32,12 @@ public class CustomPortal extends Portal {
     public IntBox wallBox;
     public IntBox airBox;
     
+    public PortalGunItem.ItemInfo portalGunItemInfo;
+    
     public int thisSideUpdateCounter = 0;
     public int otherSideUpdateCounter = 0;
+    
+    private BiPredicate<Level, BlockPos> wallPredicate;
     
     public CustomPortal(@NotNull EntityType<?> entityType, net.minecraft.world.level.Level world) {
         super(entityType, world);
@@ -39,6 +49,7 @@ public class CustomPortal extends Portal {
         descriptor = PortalGunRecord.PortalDescriptor.fromTag(compoundTag.getCompound("descriptor"));
         wallBox = IntBox.fromTag(compoundTag.getCompound("wallBox"));
         airBox = IntBox.fromTag(compoundTag.getCompound("airBox"));
+        portalGunItemInfo = PortalGunItem.ItemInfo.fromTag(compoundTag.getCompound("portalGunItemInfo"));
         thisSideUpdateCounter = compoundTag.getInt("thisSideUpdateCounter");
         otherSideUpdateCounter = compoundTag.getInt("otherSideUpdateCounter");
     }
@@ -49,6 +60,7 @@ public class CustomPortal extends Portal {
         compoundTag.put("descriptor", descriptor.toTag());
         compoundTag.put("wallBox", wallBox.toTag());
         compoundTag.put("airBox", airBox.toTag());
+        compoundTag.put("portalGunItemInfo", portalGunItemInfo.toTag());
         compoundTag.putInt("thisSideUpdateCounter", thisSideUpdateCounter);
         compoundTag.putInt("otherSideUpdateCounter", otherSideUpdateCounter);
     }
@@ -92,7 +104,7 @@ public class CustomPortal extends Portal {
             return;
         }
         // check block status
-        if (!PortalGunMod.isWallValid(level, wallBox) || !PortalGunMod.isAreaClear(level, airBox)) {
+        if (!checkBlockStatus()) {
             kill();
             record.data.remove(descriptor);
             record.setDirty();
@@ -130,6 +142,19 @@ public class CustomPortal extends Portal {
             reloadAndSyncToClient();
             return;
         }
+    }
+    
+    private boolean checkBlockStatus() {
+        if (wallPredicate == null) {
+            wallPredicate = PortalGunItem.getWallPredicate(portalGunItemInfo);
+        }
+        
+        boolean wallIntact = wallBox.fastStream().allMatch(p -> wallPredicate.test(level, p));
+        if (!wallIntact) {
+            return false;
+        }
+        
+        return PortalGunMod.isAreaClear(level, airBox);
     }
     
     private void playClosingSound() {
