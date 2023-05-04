@@ -57,11 +57,9 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 public class PortalGunItem extends Item implements GeoItem {
     private static final Logger LOGGER = LogManager.getLogger();
@@ -245,7 +243,7 @@ public class PortalGunItem extends Item implements GeoItem {
             new PortalGunRecord.PortalDescriptor(player.getUUID(), kind, side);
         
         ItemInfo itemInfo = ItemInfo.fromTag(itemStack.getOrCreateTag());
-        BiPredicate<Level, BlockPos> wallPredicate = getWallPredicate(itemInfo.allowedBlocks);
+        BiPredicate<Level, BlockPos> wallPredicate = itemInfo.allowedBlocks.getWallPredicate();
         
         PortalPlacement placement = findPortalPlacement(
             player, kind, raytraceResult, descriptor, wallPredicate
@@ -303,7 +301,7 @@ public class PortalGunItem extends Item implements GeoItem {
         portal.descriptor = descriptor;
         portal.wallBox = placement.wallBox;
         portal.airBox = placement.areaBox;
-        portal.allowedBlocks = itemInfo.allowedBlocks;
+        portal.setAllowedBlocks(itemInfo.allowedBlocks);
         portal.thisSideUpdateCounter = thisSideInfo == null ? 0 : thisSideInfo.updateCounter();
         portal.otherSideUpdateCounter = otherSideInfo == null ? 0 : otherSideInfo.updateCounter();
         PortalManipulation.makePortalRound(portal, 20);
@@ -351,17 +349,6 @@ public class PortalGunItem extends Item implements GeoItem {
         }
         
         return true;
-    }
-    
-    public static BiPredicate<Level, BlockPos> getWallPredicate(BlockList blockList) {
-        if (blockList.list().isEmpty()) {
-            // default predicate: only solid blocks
-            return (w, p) -> w.getBlockState(p).isSolidRender(w, p);
-        }
-        
-        Set<Block> allowedBlocks = blockList.asStream().collect(Collectors.toSet());
-        
-        return (w, p) -> allowedBlocks.contains(w.getBlockState(p).getBlock());
     }
     
     private static boolean checkAction(ServerPlayer player, ServerLevel world) {

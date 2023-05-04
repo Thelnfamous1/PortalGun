@@ -17,7 +17,6 @@ import qouteall.q_misc_util.my_util.IntBox;
 import tk.meowmc.portalgun.PortalGunMod;
 import tk.meowmc.portalgun.PortalGunRecord;
 import tk.meowmc.portalgun.misc.BlockList;
-import tk.meowmc.portalgun.items.PortalGunItem;
 
 import java.util.function.BiPredicate;
 
@@ -33,7 +32,7 @@ public class CustomPortal extends Portal {
     public IntBox wallBox;
     public IntBox airBox;
     
-    public BlockList allowedBlocks;
+    private BlockList allowedBlocks;
     
     public int thisSideUpdateCounter = 0;
     public int otherSideUpdateCounter = 0;
@@ -50,7 +49,7 @@ public class CustomPortal extends Portal {
         descriptor = PortalGunRecord.PortalDescriptor.fromTag(compoundTag.getCompound("descriptor"));
         wallBox = IntBox.fromTag(compoundTag.getCompound("wallBox"));
         airBox = IntBox.fromTag(compoundTag.getCompound("airBox"));
-        allowedBlocks = BlockList.fromTag(compoundTag.getList("allowedBlocks", Tag.TAG_STRING));
+        setAllowedBlocks(BlockList.fromTag(compoundTag.getList("allowedBlocks", Tag.TAG_STRING)));
         thisSideUpdateCounter = compoundTag.getInt("thisSideUpdateCounter");
         otherSideUpdateCounter = compoundTag.getInt("otherSideUpdateCounter");
     }
@@ -81,6 +80,11 @@ public class CustomPortal extends Portal {
     public void setPos(double x, double y, double z) {
         super.setPos(x, y, z);
         setOldPosAndRot();
+    }
+    
+    public void setAllowedBlocks(BlockList allowedBlocks) {
+        this.allowedBlocks = allowedBlocks;
+        this.wallPredicate = allowedBlocks.getWallPredicate();
     }
     
     void updateState() {
@@ -147,7 +151,7 @@ public class CustomPortal extends Portal {
     
     private boolean checkBlockStatus() {
         if (wallPredicate == null) {
-            wallPredicate = PortalGunItem.getWallPredicate(allowedBlocks);
+            return true;
         }
         
         boolean wallIntact = wallBox.fastStream().allMatch(p -> wallPredicate.test(level, p));
