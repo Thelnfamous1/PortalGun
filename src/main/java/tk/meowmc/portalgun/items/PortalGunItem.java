@@ -4,21 +4,12 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.Holder;
-import net.minecraft.core.HolderSet;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.StringTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.stats.Stats;
-import net.minecraft.tags.TagKey;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
@@ -59,22 +50,18 @@ import tk.meowmc.portalgun.PortalGunMod;
 import tk.meowmc.portalgun.PortalGunRecord;
 import tk.meowmc.portalgun.client.renderer.PortalGunItemRenderer;
 import tk.meowmc.portalgun.entities.CustomPortal;
+import tk.meowmc.portalgun.misc.BlockList;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class PortalGunItem extends Item implements GeoItem {
     private static final Logger LOGGER = LogManager.getLogger();
@@ -94,64 +81,20 @@ public class PortalGunItem extends Item implements GeoItem {
         SingletonGeoAnimatable.registerSyncedAnimatable(this);
     }
     
-    // example command: /give @p portalgun:portal_gun{allowedBlocks:["minecraft:stone"]} 1
-    // example command: /give @p portalgun:portal_gun{allowedBlocks:["#minecraft:ice"]} 1
-    public static record ItemInfo(List<String> allowedBlocks) {
+    // example command: /give @p portalgun:portal_gun{allowedBlocks:["#minecraft:ice","minecraft:stone"]} 1
+    public static record ItemInfo(
+        BlockList allowedBlocks
+    ) {
         public static ItemInfo fromTag(CompoundTag tag) {
-            List<String> allowedBlocks = new ArrayList<>();
-            ListTag listTag = tag.getList("allowedBlocks", 8);
-            for (Tag element : listTag) {
-                if (element instanceof StringTag stringTag) {
-                    allowedBlocks.add(stringTag.getAsString());
-                }
-            }
-            return new ItemInfo(allowedBlocks);
+            return new ItemInfo(
+                BlockList.fromTag(tag.getList("allowedBlocks", 8))
+            );
         }
         
         public CompoundTag toTag() {
             CompoundTag tag = new CompoundTag();
-            ListTag listTag = new ListTag();
-            for (String allowedBlock : allowedBlocks) {
-                listTag.add(StringTag.valueOf(allowedBlock));
-            }
-            tag.put("allowedBlocks", listTag);
+            tag.put("allowedBlocks", allowedBlocks.toTag());
             return tag;
-        }
-        
-        public Stream<Block> getAllowedBlocks() {
-            return allowedBlocks.stream().flatMap(s -> parseBlockStr(s).stream());
-        }
-        
-        public static Collection<Block> parseBlockStr(String str) {
-            if (str.startsWith("#")) {
-                TagKey<Block> tagKey = TagKey.create(
-                    Registries.BLOCK,
-                    new ResourceLocation(str.substring(1))
-                );
-                Optional<HolderSet.Named<Block>> named = BuiltInRegistries.BLOCK.getTag(tagKey);
-                if (named.isEmpty()) {
-                    LIMITED_LOGGER.invoke(() -> {
-                        LOGGER.error("Unknown block tag: {}", str);
-                    });
-                    return Collections.emptyList();
-                }
-                else {
-                    HolderSet.Named<Block> holderSet = named.get();
-                    return holderSet.stream().map(Holder::value).toList();
-                }
-            }
-            else {
-                Optional<Block> optional = BuiltInRegistries.BLOCK.getOptional(new ResourceLocation(str));
-                if (optional.isPresent()) {
-                    return Collections.singletonList(optional.get());
-                }
-                else {
-                    LIMITED_LOGGER.invoke(() -> {
-                        LOGGER.error("Unknown block: {}", str);
-                    });
-                    return Collections.emptyList();
-                }
-            }
         }
     }
     
@@ -224,10 +167,10 @@ public class PortalGunItem extends Item implements GeoItem {
         CompoundTag tag = stack.getOrCreateTag();
         ItemInfo itemInfo = ItemInfo.fromTag(tag);
         
-        if (!itemInfo.allowedBlocks.isEmpty()) {
+        if (!itemInfo.allowedBlocks.list().isEmpty()) {
             tooltip.add(Component.translatable("portal_gun.limit_allowed_blocks"));
             int displayLimit = 5;
-            List<Block> allowedBlocks = itemInfo.getAllowedBlocks().limit(displayLimit + 1).toList();
+            List<Block> allowedBlocks = itemInfo.allowedBlocks.asStream().limit(displayLimit + 1).toList();
             for (int i = 0; i < displayLimit; i++) {
                 if (i < allowedBlocks.size()) {
                     Block block = allowedBlocks.get(i);
@@ -300,9 +243,9 @@ public class PortalGunItem extends Item implements GeoItem {
         
         PortalGunRecord.PortalDescriptor descriptor =
             new PortalGunRecord.PortalDescriptor(player.getUUID(), kind, side);
-    
+        
         ItemInfo itemInfo = ItemInfo.fromTag(itemStack.getOrCreateTag());
-        BiPredicate<Level, BlockPos> wallPredicate = getWallPredicate(itemInfo);
+        BiPredicate<Level, BlockPos> wallPredicate = getWallPredicate(itemInfo.allowedBlocks);
         
         PortalPlacement placement = findPortalPlacement(
             player, kind, raytraceResult, descriptor, wallPredicate
@@ -360,7 +303,7 @@ public class PortalGunItem extends Item implements GeoItem {
         portal.descriptor = descriptor;
         portal.wallBox = placement.wallBox;
         portal.airBox = placement.areaBox;
-        portal.portalGunItemInfo = itemInfo;
+        portal.allowedBlocks = itemInfo.allowedBlocks;
         portal.thisSideUpdateCounter = thisSideInfo == null ? 0 : thisSideInfo.updateCounter();
         portal.otherSideUpdateCounter = otherSideInfo == null ? 0 : otherSideInfo.updateCounter();
         PortalManipulation.makePortalRound(portal, 20);
@@ -410,13 +353,13 @@ public class PortalGunItem extends Item implements GeoItem {
         return true;
     }
     
-    public static BiPredicate<Level, BlockPos> getWallPredicate(ItemInfo itemInfo) {
-        if (itemInfo.allowedBlocks.isEmpty()) {
+    public static BiPredicate<Level, BlockPos> getWallPredicate(BlockList blockList) {
+        if (blockList.list().isEmpty()) {
             // default predicate: only solid blocks
             return (w, p) -> w.getBlockState(p).isSolidRender(w, p);
         }
         
-        Set<Block> allowedBlocks = itemInfo.getAllowedBlocks().collect(Collectors.toSet());
+        Set<Block> allowedBlocks = blockList.asStream().collect(Collectors.toSet());
         
         return (w, p) -> allowedBlocks.contains(w.getBlockState(p).getBlock());
     }

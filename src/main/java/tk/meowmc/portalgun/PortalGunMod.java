@@ -7,6 +7,9 @@ import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.InteractionResult;
@@ -22,6 +25,10 @@ import tk.meowmc.portalgun.config.PortalGunConfig;
 import tk.meowmc.portalgun.entities.CustomPortal;
 import tk.meowmc.portalgun.items.ClawItem;
 import tk.meowmc.portalgun.items.PortalGunItem;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Function;
 
 public class PortalGunMod implements ModInitializer {
     public static final String MODID = "portalgun";
@@ -92,5 +99,32 @@ public class PortalGunMod implements ModInitializer {
         });
     }
     
+    // TODO use the one in ImmPtl in later versions
+    public static <X, TT extends Tag> ArrayList<X> listTagDeserialize(
+        ListTag listTag, Function<TT, X> deserializer,
+        Class<TT> tagClass
+    ) {
+        ArrayList<X> result = new ArrayList<>();
+        listTag.forEach(tag -> {
+            if (tag.getClass() == tagClass) {
+                X obj = deserializer.apply((TT) tag);
+                if (obj != null) {
+                    result.add(obj);
+                }
+            }
+            else {
+                LOGGER.error("Unexpected tag class: {}", tag.getClass(), new Throwable());
+            }
+        });
+        return result;
+    }
+    
+    public static <X, TT extends Tag> ListTag listTagSerialize(List<X> list, Function<X, TT> serializer) {
+        ListTag listTag = new ListTag();
+        for (X x : list) {
+            listTag.add(serializer.apply(x));
+        }
+        return listTag;
+    }
     
 }
