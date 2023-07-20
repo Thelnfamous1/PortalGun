@@ -14,7 +14,7 @@ public class RemoteCallables {
     ) {
         ItemStack itemInHand = player.getItemInHand(InteractionHand.MAIN_HAND);
         if (itemInHand.getItem() == PortalGunMod.PORTAL_GUN) {
-            PortalGunMod.PORTAL_GUN.onAttack(player, player.level, InteractionHand.MAIN_HAND);
+            PortalGunMod.PORTAL_GUN.onAttack(player, player.level(), InteractionHand.MAIN_HAND);
         }
         else {
             PortalGunMod.LOGGER.error("Invalid left click packet");

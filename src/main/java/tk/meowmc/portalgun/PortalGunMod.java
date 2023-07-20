@@ -1,9 +1,12 @@
 package tk.meowmc.portalgun;
 
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.event.client.player.ClientPreAttackCallback;
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
 import net.fabricmc.fabric.api.item.v1.FabricItemSettings;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -15,11 +18,13 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemCooldowns;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Rarity;
 import net.minecraft.world.level.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import qouteall.q_misc_util.api.McRemoteProcedureCall;
 import qouteall.q_misc_util.my_util.IntBox;
 import tk.meowmc.portalgun.config.PortalGunConfig;
 import tk.meowmc.portalgun.entities.CustomPortal;
@@ -84,18 +89,41 @@ public class PortalGunMod implements ModInitializer {
         
         PortalGunConfig.register();
         
-        // disable block breaking hand swinging
-        AttackBlockCallback.EVENT.register((player, world, hand, pos, direction) -> {
-            ItemStack stack = player.getItemInHand(hand);
-            if (stack.getItem() == PORTAL_GUN) {
-                return InteractionResult.FAIL;
-            }
-            return InteractionResult.PASS;
-        });
+//        // disable block breaking hand swinging
+//        AttackBlockCallback.EVENT.register((player, world, hand, pos, direction) -> {
+//            ItemStack stack = player.getItemInHand(hand);
+//            if (stack.getItem() == PORTAL_GUN) {
+//                return InteractionResult.FAIL;
+//            }
+//            return InteractionResult.PASS;
+//        });
         
         // add into creative inventory
         ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.TOOLS_AND_UTILITIES).register(entries -> {
             entries.accept(PORTAL_GUN);
+        });
+        
+        ClientPreAttackCallback.EVENT.register(new ClientPreAttackCallback() {
+            @Override
+            public boolean onClientPlayerPreAttack(Minecraft client, LocalPlayer player, int clickCount) {
+                ItemStack mainHandItem = player.getMainHandItem();
+                
+                if (mainHandItem.getItem() == PortalGunMod.PORTAL_GUN) {
+                    
+                    ItemCooldowns cooldowns = player.getCooldowns();
+                    float cooldownPercent = cooldowns.getCooldownPercent(PortalGunMod.PORTAL_GUN, 0);
+                    
+                    if (cooldownPercent < 0.001) {
+                        McRemoteProcedureCall.tellServerToInvoke(
+                            "tk.meowmc.portalgun.misc.RemoteCallables.onClientLeftClickPortalGun"
+                        );
+                    }
+                    
+                    return true;
+                }
+                
+                return false;
+            }
         });
     }
     

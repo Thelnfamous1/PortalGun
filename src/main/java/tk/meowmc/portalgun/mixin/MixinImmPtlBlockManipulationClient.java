@@ -14,24 +14,5 @@ import tk.meowmc.portalgun.PortalGunMod;
 
 @Mixin(value = BlockManipulationClient.class, remap = false)
 public class MixinImmPtlBlockManipulationClient {
-    
-    /**
-     * TODO PR Fabric API to add the event, let ImmPtl fire the event and use the event
-     */
-    @Inject(
-        method = "myAttackBlock",
-        at = @At("HEAD"),
-        cancellable = true,
-        remap = false
-    )
-    private static void onMyAttackBlock(CallbackInfoReturnable<Boolean> cir) {
-        ItemStack mainHandItem = Minecraft.getInstance().player.getMainHandItem();
-        if (mainHandItem.getItem() == PortalGunMod.PORTAL_GUN) {
-            McRemoteProcedureCall.tellServerToInvoke(
-                "tk.meowmc.portalgun.misc.RemoteCallables.onClientLeftClickPortalGun"
-            );
-            // return true to disable block breaking logic in continueAttack()
-            cir.setReturnValue(true);
-        }
-    }
+
 }

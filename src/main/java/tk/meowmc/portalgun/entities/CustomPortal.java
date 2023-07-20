@@ -69,7 +69,7 @@ public class CustomPortal extends Portal {
     public void tick() {
         super.tick();
         
-        if (!level.isClientSide) {
+        if (!level().isClientSide) {
             updateState();
         }
     }
@@ -130,7 +130,7 @@ public class CustomPortal extends Portal {
         if (otherSideInfo.updateCounter() != otherSideUpdateCounter) {
             // other side is replaced by new portal, update linking
             if (!isVisible()) {
-                level.playSound(
+                level().playSound(
                     null,
                     getX(), getY(), getZ(),
                     PortalGunMod.PORTAL_OPEN_EVENT,
@@ -154,16 +154,16 @@ public class CustomPortal extends Portal {
             return true;
         }
         
-        boolean wallIntact = wallBox.fastStream().allMatch(p -> wallPredicate.test(level, p));
+        boolean wallIntact = wallBox.fastStream().allMatch(p -> wallPredicate.test(level(), p));
         if (!wallIntact) {
             return false;
         }
         
-        return PortalGunMod.isAreaClear(level, airBox);
+        return PortalGunMod.isAreaClear(level(), airBox);
     }
     
     private void playClosingSound() {
-        level.playSound(
+        level().playSound(
             null,
             getX(), getY(), getZ(),
             PortalGunMod.PORTAL_CLOSE_EVENT,

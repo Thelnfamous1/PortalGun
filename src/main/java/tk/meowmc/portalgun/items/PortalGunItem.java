@@ -228,7 +228,7 @@ public class PortalGunItem extends Item implements GeoItem {
         
         Validate.isTrue(blockHit.getType() == HitResult.Type.BLOCK);
         
-        player.level.playSound(
+        player.level().playSound(
             null,
             player.getX(), player.getY(), player.getZ(),
             side == PortalGunRecord.PortalGunSide.blue ?
@@ -258,7 +258,7 @@ public class PortalGunItem extends Item implements GeoItem {
         
         triggerAnim(
             player,
-            GeoItem.getOrAssignId(player.getItemInHand(hand), ((ServerLevel) player.level)),
+            GeoItem.getOrAssignId(player.getItemInHand(hand), ((ServerLevel) player.level())),
             "portalGunController", "shoot_anim"
         );
         
@@ -321,7 +321,7 @@ public class PortalGunItem extends Item implements GeoItem {
             portal.setOtherSideOrientation(otherSideInfo.portalOrientation());
             portal.setIsVisible(true);
             portal.teleportable = true;
-            player.level.playSound(
+            player.level().playSound(
                 null,
                 player.getX(), player.getY(), player.getZ(),
                 PortalGunMod.PORTAL_OPEN_EVENT,
@@ -353,7 +353,7 @@ public class PortalGunItem extends Item implements GeoItem {
     
     private static boolean checkAction(ServerPlayer player, ServerLevel world) {
         if (world.dimension() == Level.END) {
-            EndDragonFight endDragonFight = world.dragonFight();
+            EndDragonFight endDragonFight = world.getDragonFight();
             if (endDragonFight != null) {
                 if (!endDragonFight.hasPreviouslyKilledDragon()) {
                     player.displayClientMessage(
