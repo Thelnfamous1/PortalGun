@@ -13,6 +13,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import qouteall.imm_ptl.core.McHelper;
+import qouteall.q_misc_util.Helper;
 import qouteall.q_misc_util.my_util.LimitedLogger;
 import tk.meowmc.portalgun.PortalGunMod;
 
@@ -32,7 +34,7 @@ public record BlockList(
     private static final LimitedLogger LIMITED_LOGGER = new LimitedLogger(100);
     
     public static BlockList fromTag(ListTag tag) {
-        return new BlockList(PortalGunMod.listTagDeserialize(tag, StringTag::getAsString, StringTag.class));
+        return new BlockList(Helper.listTagDeserialize(tag, StringTag::getAsString, StringTag.class));
     }
     
     public BiPredicate<Level, BlockPos> getWallPredicate() {
@@ -47,7 +49,7 @@ public record BlockList(
     }
     
     public ListTag toTag() {
-        return PortalGunMod.listTagSerialize(list, StringTag::valueOf);
+        return Helper.listTagSerialize(list, StringTag::valueOf);
     }
     
     public Stream<Block> asStream() {

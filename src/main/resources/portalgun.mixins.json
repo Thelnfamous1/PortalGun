@@ -4,11 +4,10 @@
   "package": "tk.meowmc.portalgun.mixin",
   "compatibilityLevel": "JAVA_8",
   "mixins": [
-    "MixinLivingEntity"
+
   ],
   "client": [
-    "MixinMinecraft",
-    "MixinImmPtlBlockManipulationClient",
+
   ],
   "injectors": {
     "defaultRequire": 1

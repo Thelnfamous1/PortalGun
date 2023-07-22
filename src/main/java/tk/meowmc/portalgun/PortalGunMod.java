@@ -30,6 +30,7 @@ import tk.meowmc.portalgun.config.PortalGunConfig;
 import tk.meowmc.portalgun.entities.CustomPortal;
 import tk.meowmc.portalgun.items.ClawItem;
 import tk.meowmc.portalgun.items.PortalGunItem;
+import tk.meowmc.portalgun.misc.BlockList;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -64,12 +65,6 @@ public class PortalGunMod implements ModInitializer {
         return new ResourceLocation(MODID, path);
     }
     
-    public static boolean isBlockSolid(Level world, BlockPos p) {
-//        return true;
-//        return !world.getBlockState(p).isAir();
-        return world.getBlockState(p).isSolidRender(world, p);
-    }
-    
     public static boolean isAreaClear(Level world, IntBox airBox1) {
         return airBox1.fastStream().allMatch(p -> world.getBlockState(p).isAir());
     }
@@ -89,18 +84,16 @@ public class PortalGunMod implements ModInitializer {
         
         PortalGunConfig.register();
         
-//        // disable block breaking hand swinging
-//        AttackBlockCallback.EVENT.register((player, world, hand, pos, direction) -> {
-//            ItemStack stack = player.getItemInHand(hand);
-//            if (stack.getItem() == PORTAL_GUN) {
-//                return InteractionResult.FAIL;
-//            }
-//            return InteractionResult.PASS;
-//        });
-        
         // add into creative inventory
         ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.TOOLS_AND_UTILITIES).register(entries -> {
             entries.accept(PORTAL_GUN);
+    
+            ItemStack stack = new ItemStack(PORTAL_GUN);
+            PortalGunItem.ItemInfo itemInfo = new PortalGunItem.ItemInfo(
+                new BlockList(List.of("minecraft:quartz_block"))
+            );
+            stack.setTag(itemInfo.toTag());
+            entries.accept(stack);
         });
         
         ClientPreAttackCallback.EVENT.register(new ClientPreAttackCallback() {
@@ -126,33 +119,4 @@ public class PortalGunMod implements ModInitializer {
             }
         });
     }
-    
-    // TODO use the one in ImmPtl in later versions
-    public static <X, TT extends Tag> ArrayList<X> listTagDeserialize(
-        ListTag listTag, Function<TT, X> deserializer,
-        Class<TT> tagClass
-    ) {
-        ArrayList<X> result = new ArrayList<>();
-        listTag.forEach(tag -> {
-            if (tag.getClass() == tagClass) {
-                X obj = deserializer.apply((TT) tag);
-                if (obj != null) {
-                    result.add(obj);
-                }
-            }
-            else {
-                LOGGER.error("Unexpected tag class: {}", tag.getClass(), new Throwable());
-            }
-        });
-        return result;
-    }
-    
-    public static <X, TT extends Tag> ListTag listTagSerialize(List<X> list, Function<X, TT> serializer) {
-        ListTag listTag = new ListTag();
-        for (X x : list) {
-            listTag.add(serializer.apply(x));
-        }
-        return listTag;
-    }
-    
 }

@@ -2,6 +2,7 @@ package tk.meowmc.portalgun.misc;
 
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.ItemCooldowns;
 import net.minecraft.world.item.ItemStack;
 import tk.meowmc.portalgun.PortalGunMod;
 import tk.meowmc.portalgun.PortalGunRecord;
@@ -14,10 +15,18 @@ public class RemoteCallables {
     ) {
         ItemStack itemInHand = player.getItemInHand(InteractionHand.MAIN_HAND);
         if (itemInHand.getItem() == PortalGunMod.PORTAL_GUN) {
-            PortalGunMod.PORTAL_GUN.onAttack(player, player.level(), InteractionHand.MAIN_HAND);
+            ItemCooldowns cooldowns = player.getCooldowns();
+            float cooldownPercent = cooldowns.getCooldownPercent(PortalGunMod.PORTAL_GUN, 0);
+            
+            if (cooldownPercent < 0.001) {
+                PortalGunMod.PORTAL_GUN.onAttack(player, player.level(), InteractionHand.MAIN_HAND);
+            }
+            else {
+                PortalGunMod.LOGGER.warn("Received portal gun interaction packet while on cooldown {}", player);
+            }
         }
         else {
-            PortalGunMod.LOGGER.error("Invalid left click packet");
+            PortalGunMod.LOGGER.error("Invalid left click packet {}", player);
         }
     }
     
