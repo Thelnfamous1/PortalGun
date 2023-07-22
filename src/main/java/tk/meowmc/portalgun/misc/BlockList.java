@@ -13,10 +13,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import qouteall.imm_ptl.core.McHelper;
 import qouteall.q_misc_util.Helper;
 import qouteall.q_misc_util.my_util.LimitedLogger;
-import tk.meowmc.portalgun.PortalGunMod;
 
 import java.util.Collection;
 import java.util.Collections;

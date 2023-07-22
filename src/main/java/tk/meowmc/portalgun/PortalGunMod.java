@@ -1,30 +1,19 @@
 package tk.meowmc.portalgun;
 
 import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.event.client.player.ClientPreAttackCallback;
-import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
 import net.fabricmc.fabric.api.item.v1.FabricItemSettings;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
-import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemCooldowns;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Rarity;
 import net.minecraft.world.level.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import qouteall.q_misc_util.api.McRemoteProcedureCall;
 import qouteall.q_misc_util.my_util.IntBox;
 import tk.meowmc.portalgun.config.PortalGunConfig;
 import tk.meowmc.portalgun.entities.CustomPortal;
@@ -32,9 +21,7 @@ import tk.meowmc.portalgun.items.ClawItem;
 import tk.meowmc.portalgun.items.PortalGunItem;
 import tk.meowmc.portalgun.misc.BlockList;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 
 public class PortalGunMod implements ModInitializer {
     public static final String MODID = "portalgun";
@@ -87,36 +74,13 @@ public class PortalGunMod implements ModInitializer {
         // add into creative inventory
         ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.TOOLS_AND_UTILITIES).register(entries -> {
             entries.accept(PORTAL_GUN);
-    
+            
             ItemStack stack = new ItemStack(PORTAL_GUN);
             PortalGunItem.ItemInfo itemInfo = new PortalGunItem.ItemInfo(
                 new BlockList(List.of("minecraft:quartz_block"))
             );
             stack.setTag(itemInfo.toTag());
             entries.accept(stack);
-        });
-        
-        ClientPreAttackCallback.EVENT.register(new ClientPreAttackCallback() {
-            @Override
-            public boolean onClientPlayerPreAttack(Minecraft client, LocalPlayer player, int clickCount) {
-                ItemStack mainHandItem = player.getMainHandItem();
-                
-                if (mainHandItem.getItem() == PortalGunMod.PORTAL_GUN) {
-                    
-                    ItemCooldowns cooldowns = player.getCooldowns();
-                    float cooldownPercent = cooldowns.getCooldownPercent(PortalGunMod.PORTAL_GUN, 0);
-                    
-                    if (cooldownPercent < 0.001) {
-                        McRemoteProcedureCall.tellServerToInvoke(
-                            "tk.meowmc.portalgun.misc.RemoteCallables.onClientLeftClickPortalGun"
-                        );
-                    }
-                    
-                    return true;
-                }
-                
-                return false;
-            }
         });
     }
 }

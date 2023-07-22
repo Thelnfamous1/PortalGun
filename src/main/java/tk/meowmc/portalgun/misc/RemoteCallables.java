@@ -7,8 +7,6 @@ import net.minecraft.world.item.ItemStack;
 import tk.meowmc.portalgun.PortalGunMod;
 import tk.meowmc.portalgun.PortalGunRecord;
 
-import java.util.Map;
-
 public class RemoteCallables {
     public static void onClientLeftClickPortalGun(
         ServerPlayer player

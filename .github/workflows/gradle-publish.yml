@@ -27,7 +27,7 @@ jobs:
           gradle-version: 8.1.1
           arguments: build
 
-      - uses: Kir-Antipov/mc-publish@v3.2
+      - uses: Kir-Antipov/mc-publish@v3.3
         with:
           version-type: alpha
           dependencies: ""
