@@ -1,4 +1,4 @@
-package tk.meowmc.portalgun;
+package portalgun;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;

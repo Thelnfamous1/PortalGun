@@ -1,4 +1,4 @@
-package tk.meowmc.portalgun;
+package portalgun;
 
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.item.v1.FabricItemSettings;
@@ -15,11 +15,11 @@ import net.minecraft.world.level.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import qouteall.q_misc_util.my_util.IntBox;
-import tk.meowmc.portalgun.config.PortalGunConfig;
-import tk.meowmc.portalgun.entities.CustomPortal;
-import tk.meowmc.portalgun.items.ClawItem;
-import tk.meowmc.portalgun.items.PortalGunItem;
-import tk.meowmc.portalgun.misc.BlockList;
+import portalgun.config.PortalGunConfig;
+import portalgun.entities.CustomPortal;
+import portalgun.items.ClawItem;
+import portalgun.items.PortalGunItem;
+import portalgun.misc.BlockList;
 
 import java.util.List;
 
@@ -77,7 +77,7 @@ public class PortalGunMod implements ModInitializer {
             
             ItemStack stack = new ItemStack(PORTAL_GUN);
             PortalGunItem.ItemInfo itemInfo = new PortalGunItem.ItemInfo(
-                new BlockList(List.of("minecraft:quartz_block"))
+                new BlockList(List.of("minecraft:quartz_block")), 0, 0
             );
             stack.setTag(itemInfo.toTag());
             entries.accept(stack);

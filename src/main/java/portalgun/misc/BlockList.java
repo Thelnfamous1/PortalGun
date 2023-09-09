@@ -1,4 +1,4 @@
-package tk.meowmc.portalgun.misc;
+package portalgun.misc;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;

@@ -1,4 +1,4 @@
-package tk.meowmc.portalgun.items;
+package portalgun.items;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
@@ -46,11 +46,11 @@ import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
-import tk.meowmc.portalgun.PortalGunMod;
-import tk.meowmc.portalgun.PortalGunRecord;
-import tk.meowmc.portalgun.client.renderer.PortalGunItemRenderer;
-import tk.meowmc.portalgun.entities.CustomPortal;
-import tk.meowmc.portalgun.misc.BlockList;
+import portalgun.PortalGunMod;
+import portalgun.PortalGunRecord;
+import portalgun.client.renderer.PortalGunItemRenderer;
+import portalgun.entities.CustomPortal;
+import portalgun.misc.BlockList;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
@@ -81,17 +81,23 @@ public class PortalGunItem extends Item implements GeoItem {
     
     // example command: /give @p portalgun:portal_gun{allowedBlocks:["#minecraft:ice","minecraft:stone"]} 1
     public static record ItemInfo(
-        BlockList allowedBlocks
+        BlockList allowedBlocks,
+        int maxEnergy, // 0 for infinite energy
+        int remainingEnergy
     ) {
         public static ItemInfo fromTag(CompoundTag tag) {
             return new ItemInfo(
-                BlockList.fromTag(tag.getList("allowedBlocks", 8))
+                BlockList.fromTag(tag.getList("allowedBlocks", 8)),
+                tag.getInt("maxEnergy"), // if maxEnergy is missing, it will give 0
+                tag.getInt("remainingEnergy")
             );
         }
         
         public CompoundTag toTag() {
             CompoundTag tag = new CompoundTag();
             tag.put("allowedBlocks", allowedBlocks.toTag());
+            tag.putInt("maxEnergy", maxEnergy);
+            tag.putInt("remainingEnergy", remainingEnergy);
             return tag;
         }
     }
@@ -450,5 +456,32 @@ public class PortalGunItem extends Item implements GeoItem {
                 && !Objects.equals(p.descriptor, descriptor)
         );
         return !portals.isEmpty();
+    }
+    
+    // PortalGun does not use vanilla damage system
+    // because vanilla max damage is unchangeable
+    @Override
+    public boolean isBarVisible(ItemStack stack) {
+        CompoundTag tag = stack.getOrCreateTag();
+        int maxEnergy = tag.getInt("maxEnergy");
+        return maxEnergy != 0;
+    }
+    
+    @Override
+    public int getBarWidth(ItemStack stack) {
+        CompoundTag tag = stack.getOrCreateTag();
+        int maxEnergy = tag.getInt("maxEnergy");
+        int remainingEnergy = tag.getInt("remainingEnergy");
+        
+        if (maxEnergy == 0) {
+            return 0;
+        }
+        
+        return Math.round(13.0F - (float) remainingEnergy * 13.0F / (float) maxEnergy);
+    }
+    
+    @Override
+    public int getBarColor(ItemStack stack) {
+        return 0x0000FF;
     }
 }

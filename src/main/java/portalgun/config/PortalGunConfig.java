@@ -1,11 +1,11 @@
-package tk.meowmc.portalgun.config;
+package portalgun.config;
 
 import me.shedaniel.autoconfig.AutoConfig;
 import me.shedaniel.autoconfig.ConfigData;
 import me.shedaniel.autoconfig.annotation.Config;
 import me.shedaniel.autoconfig.annotation.ConfigEntry;
 import me.shedaniel.autoconfig.serializer.JanksonConfigSerializer;
-import tk.meowmc.portalgun.PortalGunMod;
+import portalgun.PortalGunMod;
 
 @Config(name = PortalGunMod.MODID)
 public class PortalGunConfig implements ConfigData {

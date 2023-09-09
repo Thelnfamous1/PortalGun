@@ -1,4 +1,4 @@
-package tk.meowmc.portalgun.items;
+package portalgun.items;
 
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.world.item.Item;
@@ -10,7 +10,7 @@ import software.bernie.geckolib.core.animatable.instance.SingletonAnimatableInst
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.object.PlayState;
-import tk.meowmc.portalgun.client.renderer.ClawItemRenderer;
+import portalgun.client.renderer.ClawItemRenderer;
 
 import java.util.function.Consumer;
 import java.util.function.Supplier;

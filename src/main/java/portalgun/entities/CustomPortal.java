@@ -1,4 +1,4 @@
-package tk.meowmc.portalgun.entities;
+package portalgun.entities;
 
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
 import net.minecraft.core.BlockPos;
@@ -14,9 +14,9 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import qouteall.imm_ptl.core.portal.Portal;
 import qouteall.q_misc_util.my_util.IntBox;
-import tk.meowmc.portalgun.PortalGunMod;
-import tk.meowmc.portalgun.PortalGunRecord;
-import tk.meowmc.portalgun.misc.BlockList;
+import portalgun.PortalGunMod;
+import portalgun.PortalGunRecord;
+import portalgun.misc.BlockList;
 
 import java.util.function.BiPredicate;
 

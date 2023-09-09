@@ -1,4 +1,4 @@
-package tk.meowmc.portalgun.client;
+package portalgun.client;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.api.ClientModInitializer;
@@ -17,12 +17,12 @@ import net.minecraft.world.item.ItemCooldowns;
 import net.minecraft.world.item.ItemStack;
 import org.lwjgl.glfw.GLFW;
 import qouteall.q_misc_util.api.McRemoteProcedureCall;
-import tk.meowmc.portalgun.PortalGunMod;
-import tk.meowmc.portalgun.client.renderer.CustomPortalEntityRenderer;
-import tk.meowmc.portalgun.client.renderer.models.PortalOverlayModel;
-import tk.meowmc.portalgun.entities.CustomPortal;
+import portalgun.PortalGunMod;
+import portalgun.client.renderer.CustomPortalEntityRenderer;
+import portalgun.client.renderer.models.PortalOverlayModel;
+import portalgun.entities.CustomPortal;
 
-import static tk.meowmc.portalgun.PortalGunMod.id;
+import static portalgun.PortalGunMod.id;
 
 @Environment(EnvType.CLIENT)
 public class PortalgunClient implements ClientModInitializer {
@@ -33,7 +33,7 @@ public class PortalgunClient implements ClientModInitializer {
         KeyMapping clearPortals = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.portalgun.clearportals", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_R, "category.portalgun"));
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (clearPortals.consumeClick()) {
-                McRemoteProcedureCall.tellServerToInvoke("tk.meowmc.portalgun.misc.RemoteCallables.onClientClearPortalGun");
+                McRemoteProcedureCall.tellServerToInvoke("portalgun.misc.RemoteCallables.onClientClearPortalGun");
             }
         });
         
@@ -52,7 +52,7 @@ public class PortalgunClient implements ClientModInitializer {
                     
                     if (cooldownPercent < 0.001) {
                         McRemoteProcedureCall.tellServerToInvoke(
-                            "tk.meowmc.portalgun.misc.RemoteCallables.onClientLeftClickPortalGun"
+                            "portalgun.misc.RemoteCallables.onClientLeftClickPortalGun"
                         );
                     }
                     

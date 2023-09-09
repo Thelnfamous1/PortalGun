@@ -1,11 +1,11 @@
-package tk.meowmc.portalgun.misc;
+package portalgun.misc;
 
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemCooldowns;
 import net.minecraft.world.item.ItemStack;
-import tk.meowmc.portalgun.PortalGunMod;
-import tk.meowmc.portalgun.PortalGunRecord;
+import portalgun.PortalGunMod;
+import portalgun.PortalGunRecord;
 
 public class RemoteCallables {
     public static void onClientLeftClickPortalGun(

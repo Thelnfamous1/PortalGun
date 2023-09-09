@@ -1,4 +1,4 @@
-package tk.meowmc.portalgun.client.renderer;
+package portalgun.client.renderer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.LightTexture;
@@ -10,13 +10,13 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
 import qouteall.imm_ptl.core.CHelper;
 import qouteall.q_misc_util.my_util.DQuaternion;
-import tk.meowmc.portalgun.PortalGunMod;
-import tk.meowmc.portalgun.client.PortalgunClient;
-import tk.meowmc.portalgun.client.renderer.models.PortalOverlayModel;
-import tk.meowmc.portalgun.entities.CustomPortal;
+import portalgun.PortalGunMod;
+import portalgun.client.PortalgunClient;
+import portalgun.client.renderer.models.PortalOverlayModel;
+import portalgun.entities.CustomPortal;
 
 import static net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY;
-import static tk.meowmc.portalgun.PortalGunMod.id;
+import static portalgun.PortalGunMod.id;
 
 public class CustomPortalEntityRenderer extends EntityRenderer<CustomPortal> {
     private final PortalOverlayModel model;

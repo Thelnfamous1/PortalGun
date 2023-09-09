@@ -13,13 +13,13 @@
   "icon": "assets/portalgun/icon.png",
   "entrypoints": {
     "client": [
-      "tk.meowmc.portalgun.client.PortalgunClient"
+      "portalgun.client.PortalgunClient"
     ],
     "main": [
-      "tk.meowmc.portalgun.PortalGunMod"
+      "portalgun.PortalGunMod"
     ],
     "modmenu": [
-      "tk.meowmc.portalgun.config.ModMenuIntegration"
+      "portalgun.config.ModMenuIntegration"
     ]
   },
   "mixins": [

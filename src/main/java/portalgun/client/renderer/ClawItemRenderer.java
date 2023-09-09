@@ -1,9 +1,9 @@
-package tk.meowmc.portalgun.client.renderer;
+package portalgun.client.renderer;
 
 import net.minecraft.resources.ResourceLocation;
 import software.bernie.geckolib.model.DefaultedItemGeoModel;
 import software.bernie.geckolib.renderer.GeoItemRenderer;
-import tk.meowmc.portalgun.items.ClawItem;
+import portalgun.items.ClawItem;
 
 public class ClawItemRenderer extends GeoItemRenderer<ClawItem> {
     public ClawItemRenderer() {
