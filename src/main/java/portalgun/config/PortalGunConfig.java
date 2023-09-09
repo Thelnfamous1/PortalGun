@@ -9,9 +9,7 @@ import portalgun.PortalGunMod;
 
 @Config(name = PortalGunMod.MODID)
 public class PortalGunConfig implements ConfigData {
-    @ConfigEntry.Gui.TransitiveObject
-    @ConfigEntry.Category("enabled")
-    public final Enabled enabled = new Enabled();
+    public int maxEnergy = 100;
 
     public static void register() {
         AutoConfig.register(PortalGunConfig.class, JanksonConfigSerializer::new);
@@ -23,13 +21,6 @@ public class PortalGunConfig implements ConfigData {
 
     public static void save() {
         AutoConfig.getConfigHolder(PortalGunConfig.class).save();
-    }
-
-
-    public static class Enabled {
-        //public final boolean enableOldPortalGunModel = false;
-        //public final boolean enableRoundPortals = true;
-//        public final boolean portalFunneling = true;
     }
 
 }

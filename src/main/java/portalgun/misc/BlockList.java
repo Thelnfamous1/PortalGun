@@ -16,6 +16,7 @@ import org.apache.logging.log4j.Logger;
 import qouteall.q_misc_util.Helper;
 import qouteall.q_misc_util.my_util.LimitedLogger;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -30,6 +31,10 @@ public record BlockList(
 ) {
     private static final Logger LOGGER = LogManager.getLogger();
     private static final LimitedLogger LIMITED_LOGGER = new LimitedLogger(100);
+    
+    public static BlockList createDefault() {
+        return new BlockList(new ArrayList<>());
+    }
     
     public static BlockList fromTag(ListTag tag) {
         return new BlockList(Helper.listTagDeserialize(tag, StringTag::getAsString, StringTag.class));

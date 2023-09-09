@@ -5,6 +5,7 @@ import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -28,6 +29,7 @@ import net.minecraft.world.phys.Vec3;
 import org.apache.commons.lang3.Validate;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import portalgun.config.PortalGunConfig;
 import qouteall.imm_ptl.core.IPGlobal;
 import qouteall.imm_ptl.core.McHelper;
 import qouteall.imm_ptl.core.compat.GravityChangerInterface;
@@ -80,16 +82,28 @@ public class PortalGunItem extends Item implements GeoItem {
     }
     
     // example command: /give @p portalgun:portal_gun{allowedBlocks:["#minecraft:ice","minecraft:stone"]} 1
-    public static record ItemInfo(
-        BlockList allowedBlocks,
-        int maxEnergy, // 0 for infinite energy
-        int remainingEnergy
-    ) {
+    public static final class ItemInfo {
+        public BlockList allowedBlocks;
+        public int maxEnergy;
+        public int remainingEnergy;
+        
+        public ItemInfo(
+            BlockList allowedBlocks,
+            int maxEnergy, // 0 for infinite energy
+            int remainingEnergy
+        ) {
+            this.allowedBlocks = allowedBlocks;
+            this.maxEnergy = maxEnergy;
+            this.remainingEnergy = remainingEnergy;
+        }
+        
         public static ItemInfo fromTag(CompoundTag tag) {
             return new ItemInfo(
-                BlockList.fromTag(tag.getList("allowedBlocks", 8)),
-                tag.getInt("maxEnergy"), // if maxEnergy is missing, it will give 0
-                tag.getInt("remainingEnergy")
+                BlockList.fromTag(tag.getList("allowedBlocks", Tag.TAG_STRING)),
+                tag.contains("maxEnergy") ?
+                    tag.getInt("maxEnergy") : PortalGunConfig.get().maxEnergy,
+                tag.contains("remainingEnergy") ?
+                    tag.getInt("remainingEnergy") : PortalGunConfig.get().maxEnergy
             );
         }
         
@@ -100,6 +114,40 @@ public class PortalGunItem extends Item implements GeoItem {
             tag.putInt("remainingEnergy", remainingEnergy);
             return tag;
         }
+        
+        public ItemStack toStack() {
+            ItemStack stack = new ItemStack(PortalGunMod.PORTAL_GUN);
+            stack.setTag(toTag());
+            return stack;
+        }
+        
+        public boolean limitsEnergy() {
+            return this.maxEnergy != 0;
+        }
+        
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == this) return true;
+            if (obj == null || obj.getClass() != this.getClass()) return false;
+            var that = (ItemInfo) obj;
+            return Objects.equals(this.allowedBlocks, that.allowedBlocks) &&
+                this.maxEnergy == that.maxEnergy &&
+                this.remainingEnergy == that.remainingEnergy;
+        }
+        
+        @Override
+        public int hashCode() {
+            return Objects.hash(allowedBlocks, maxEnergy, remainingEnergy);
+        }
+        
+        @Override
+        public String toString() {
+            return "ItemInfo[" +
+                "allowedBlocks=" + allowedBlocks + ", " +
+                "maxEnergy=" + maxEnergy + ", " +
+                "remainingEnergy=" + remainingEnergy + ']';
+        }
+        
     }
     
     // Utilise our own render hook to define our custom renderer
@@ -185,6 +233,12 @@ public class PortalGunItem extends Item implements GeoItem {
                 tooltip.add(Component.literal("..."));
             }
         }
+        
+        if (itemInfo.limitsEnergy()) {
+            tooltip.add(Component.translatable(
+                "portal_gun.remaining_energy", itemInfo.remainingEnergy, itemInfo.maxEnergy
+            ));
+        }
     }
     
     public InteractionResult onAttack(
@@ -249,6 +303,17 @@ public class PortalGunItem extends Item implements GeoItem {
             new PortalGunRecord.PortalDescriptor(player.getUUID(), kind, side);
         
         ItemInfo itemInfo = ItemInfo.fromTag(itemStack.getOrCreateTag());
+        
+        if (itemInfo.limitsEnergy()) {
+            if (itemInfo.remainingEnergy <= 0) {
+                player.displayClientMessage(
+                    Component.translatable("portal_gun.out_of_energy"),
+                    true
+                );
+                return false;
+            }
+        }
+        
         BiPredicate<Level, BlockPos> wallPredicate = itemInfo.allowedBlocks.getWallPredicate();
         
         PortalPlacement placement = findPortalPlacement(
@@ -257,6 +322,11 @@ public class PortalGunItem extends Item implements GeoItem {
         
         if (placement == null) {
             return false;
+        }
+        
+        if (itemInfo.limitsEnergy()) {
+            itemInfo.remainingEnergy--;
+            itemStack.setTag(itemInfo.toTag());
         }
         
         Direction rightDir = placement.rotation.transformedX;
@@ -477,11 +547,11 @@ public class PortalGunItem extends Item implements GeoItem {
             return 0;
         }
         
-        return Math.round(13.0F - (float) remainingEnergy * 13.0F / (float) maxEnergy);
+        return Math.round((float) remainingEnergy * 13.0F / (float) maxEnergy);
     }
     
     @Override
     public int getBarColor(ItemStack stack) {
-        return 0x0000FF;
+        return 0x00d907e0;
     }
 }

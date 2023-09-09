@@ -12,6 +12,9 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: write
+
     steps:
       - uses: actions/checkout@v2
 
@@ -33,8 +36,8 @@ jobs:
           dependencies: ""
           changelog: ""
 
-          files-primary: build/libs/!(*-@(dev|sources|javadoc)).jar
-          files-secondary: ""
+          files: |
+            build/libs/!(*-@(dev|sources|javadoc)).jar
 
           modrinth-id: n1B6JCKV
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}

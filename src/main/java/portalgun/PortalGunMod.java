@@ -9,11 +9,11 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Rarity;
 import net.minecraft.world.level.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import portalgun.recipe.PortalGunRechargeRecipe;
 import qouteall.q_misc_util.my_util.IntBox;
 import portalgun.config.PortalGunConfig;
 import portalgun.entities.CustomPortal;
@@ -71,16 +71,23 @@ public class PortalGunMod implements ModInitializer {
         
         PortalGunConfig.register();
         
+        PortalGunRechargeRecipe.init();
+        
         // add into creative inventory
         ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.TOOLS_AND_UTILITIES).register(entries -> {
-            entries.accept(PORTAL_GUN);
+            int maxEnergy = PortalGunConfig.get().maxEnergy;
             
-            ItemStack stack = new ItemStack(PORTAL_GUN);
-            PortalGunItem.ItemInfo itemInfo = new PortalGunItem.ItemInfo(
+            entries.accept(new PortalGunItem.ItemInfo(
+                BlockList.createDefault(), 0, 0
+            ).toStack());
+            
+            entries.accept(new PortalGunItem.ItemInfo(
                 new BlockList(List.of("minecraft:quartz_block")), 0, 0
-            );
-            stack.setTag(itemInfo.toTag());
-            entries.accept(stack);
+            ).toStack());
+            
+            entries.accept(new PortalGunItem.ItemInfo(
+                BlockList.createDefault(), maxEnergy, maxEnergy
+            ).toStack());
         });
     }
 }
