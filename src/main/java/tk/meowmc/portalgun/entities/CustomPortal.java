@@ -49,6 +49,7 @@ public class CustomPortal extends Portal implements ColoredPortal {
         airBox = IntBoxHelper.fromTag(compoundTag.getCompound("airBox"));
         thisSideUpdateCounter = compoundTag.getInt("thisSideUpdateCounter");
         otherSideUpdateCounter = compoundTag.getInt("otherSideUpdateCounter");
+        this.readCustomPortalColor(compoundTag);
     }
     
     @Override
@@ -59,6 +60,7 @@ public class CustomPortal extends Portal implements ColoredPortal {
         compoundTag.put("airBox", IntBoxHelper.toTag(airBox));
         compoundTag.putInt("thisSideUpdateCounter", thisSideUpdateCounter);
         compoundTag.putInt("otherSideUpdateCounter", otherSideUpdateCounter);
+        this.writeCustomPortalColor(compoundTag);
     }
     
     @Override

@@ -314,7 +314,7 @@ public class PortalGunItem extends Item implements IAnimatable, ISyncable, Color
         );
         record.data.put(descriptor, thisSideInfo);
         record.setDirty();
-        ColoredPortalGun.colorPortalFromGun(portal, itemStack, side);
+        ColoredPortalGun.colorPortal(portal, itemStack, side);
         
         if (!isExistingPortal) {
             McHelper.spawnServerEntity(portal);

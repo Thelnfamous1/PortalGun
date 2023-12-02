@@ -10,7 +10,7 @@ public interface ColoredPortalGun {
 
     String CUSTOM_PORTAL_COLORS_TAG = "CustomPortalColors";
 
-    static void colorPortalFromGun(CustomPortal portal, ItemStack portalGun, PortalGunRecord.PortalGunSide side){
+    static void colorPortal(CustomPortal portal, ItemStack portalGun, PortalGunRecord.PortalGunSide side){
         if(portalGun.getItem() instanceof ColoredPortalGun cpg && cpg.hasCustomColorForSide(portalGun, side)){
             portal.setCustomPortalColor(cpg.getColorForSide(portalGun, side));
         }
