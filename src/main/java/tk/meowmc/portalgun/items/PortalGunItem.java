@@ -56,7 +56,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.function.Consumer;
 
-public class PortalGunItem extends Item implements IAnimatable, ISyncable {
+public class PortalGunItem extends Item implements IAnimatable, ISyncable, ColoredPortalGun {
     private static final Logger LOGGER = LogManager.getLogger();
     public static final int COOLDOWN_TICKS = 4;
     public static final String CONTROLLER_NAME = "portalGunController";
@@ -314,6 +314,7 @@ public class PortalGunItem extends Item implements IAnimatable, ISyncable {
         );
         record.data.put(descriptor, thisSideInfo);
         record.setDirty();
+        ColoredPortalGun.colorPortalFromGun(portal, itemStack, side);
         
         if (!isExistingPortal) {
             McHelper.spawnServerEntity(portal);
