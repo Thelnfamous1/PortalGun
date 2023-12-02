@@ -158,7 +158,7 @@ public class CustomPortal extends Portal implements ColoredPortal {
     }
 
     @Override
-    public int getCustomPortalColor(){
+    public int getPortalColor(){
         return this.entityData.get(DATA_COLOR).orElse(this.descriptor.side().getColorInt());
     }
 

@@ -48,10 +48,7 @@ public class CustomPortalEntityRenderer extends EntityRenderer<CustomPortal> {
 //        matrices.mulPose(entity.getOrientationRotation().toMcQuaternion());
         matrices.translate(0, 0, PortalGunMod.portalOverlayOffset);
 
-        int color = entity.descriptor.side().getColorInt();
-        if(entity.hasCustomPortalColor()){
-            color = entity.getCustomPortalColor();
-        }
+        int color = entity.getPortalColor();
         
         int r = (color & 0xFF0000) >> 16;
         int g = (color & 0xFF00) >> 8;

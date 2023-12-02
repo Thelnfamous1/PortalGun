@@ -9,7 +9,7 @@ public interface ColoredPortal {
 
     default void writeCustomPortalColor(CompoundTag compoundTag){
         if (this.hasCustomPortalColor()) {
-            compoundTag.putInt(CUSTOM_PORTAL_COLOR_TAG, this.getCustomPortalColor());
+            compoundTag.putInt(CUSTOM_PORTAL_COLOR_TAG, this.getPortalColor());
         }
     }
 
@@ -21,7 +21,7 @@ public interface ColoredPortal {
 
     boolean hasCustomPortalColor();
 
-    int getCustomPortalColor();
+    int getPortalColor();
 
     void setCustomPortalColor(int portalColor);
 

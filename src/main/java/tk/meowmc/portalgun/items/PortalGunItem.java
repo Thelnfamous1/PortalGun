@@ -153,6 +153,7 @@ public class PortalGunItem extends Item implements IAnimatable, ISyncable, Color
         super.appendHoverText(stack, world, tooltip, context);
         
         tooltip.add(Component.translatable("item.portalgun.portal_gun_desc").withStyle(ChatFormatting.GOLD));
+        this.addCustomPortalColorsTooltip(stack, world, tooltip, context);
     }
     
     public InteractionResult onAttack(
