@@ -1,15 +1,35 @@
 package tk.meowmc.portalgun.client.renderer;
 
 import net.minecraft.resources.ResourceLocation;
-import software.bernie.geckolib.model.DefaultedItemGeoModel;
-import software.bernie.geckolib.renderer.GeoItemRenderer;
+import software.bernie.geckolib3.model.AnimatedGeoModel;
+import software.bernie.geckolib3.renderers.geo.GeoItemRenderer;
+import tk.meowmc.portalgun.PortalGunMod;
 import tk.meowmc.portalgun.items.ClawItem;
 
 public class ClawItemRenderer extends GeoItemRenderer<ClawItem> {
+
+    public static final ResourceLocation MODEL = new ResourceLocation(PortalGunMod.MODID, "geo/portalgun_claw.geo.json");
+    public static final ResourceLocation TEXTURE = new ResourceLocation(PortalGunMod.MODID, "textures/item/portalgun.png");
+    public static final ResourceLocation ANIMATION = new ResourceLocation(PortalGunMod.MODID, "animations/portalgun_claw.animation.json");
+
     public ClawItemRenderer() {
         super(
-            new DefaultedItemGeoModel<ClawItem>(new ResourceLocation("portalgun", "portalgun_claw"))
-                .withAltTexture(new ResourceLocation("portalgun", "portalgun"))
+                new AnimatedGeoModel<>() {
+                    @Override
+                    public ResourceLocation getModelResource(ClawItem clawItem) {
+                        return MODEL;
+                    }
+
+                    @Override
+                    public ResourceLocation getTextureResource(ClawItem clawItem) {
+                        return TEXTURE;
+                    }
+
+                    @Override
+                    public ResourceLocation getAnimationResource(ClawItem clawItem) {
+                        return ANIMATION;
+                    }
+                }
         );
     }
 }

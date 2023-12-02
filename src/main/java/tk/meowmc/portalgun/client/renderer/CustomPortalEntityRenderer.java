@@ -40,8 +40,9 @@ public class CustomPortalEntityRenderer extends EntityRenderer<CustomPortal> {
         // MC use the normal with some global light direction to calculate the facing light (not block light).
         // It even affects emissive layer.
         // Change the normal matrix to make the facing light always brightest.
-        matrices.last().normal().rotate(DQuaternion.rotationByDegrees(new Vec3(1, 0, 0), -90).toMcQuaternion());
-        matrices.last().pose().rotate(entity.getOrientationRotation().toMcQuaternion());
+
+        matrices.last().normal().mul(DQuaternion.rotationByDegrees(new Vec3(1, 0, 0), -90).toMcQuaternion());
+        matrices.last().pose().multiply(entity.getOrientationRotation().toMcQuaternion());
         
         // don't do this
 //        matrices.mulPose(entity.getOrientationRotation().toMcQuaternion());

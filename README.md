@@ -1,11 +1,21 @@
-# Portal Gun mod
+# ForgeTemplate
 
-A Minecraft mod that provides portal gun using [Immersive Portals](https://github.com/iPortalTeam/ImmersivePortalsMod) functionality.
+A simple template based off of the [MDK](https://github.com/MinecraftForge/MinecraftForge/tree/1.19.x/mdk) that I use to create new projects quicker by extracting all mod-related info to `gradle.properties`.
+**This does not do the work for you.** It only makes the initial Gradle setup easier and less tedious.
 
-It's a fork of [MeowMC's Portal Gun mod](https://github.com/MeowMC/PortalGun).
+## Setting up
+* Open up `gradle.properties` and change all the necessary properties
+* Rename the main package to be the same as `mod_base_package` in the properties file, e.g. `me.sizableshrimp.examplemod`
 
-![portal_gun.png](https://s2.loli.net/2023/03/19/mxdDAr76Y3RwV9B.png)
+### Using mixins?
+* Delete `build.gradle`
+* Rename `mixinbuild.gradle` to `build.gradle`
+* Rename `examplemod.mixins.json` to start with your mod id
+* Add mixins under the `mixin` package inside your main package, e.g. `me.sizableshrimp.examplemod.mixin`
 
-### Crafting Recipe
+### Not using mixins?
+* Delete `mixinbuild.gradle`
+* Delete `src/main/resources/examplemod.mixins.json`
+* Remove `mixin_version` from `gradle.properties`
 
-![portal_gun_recipe.png](https://s2.loli.net/2023/03/19/qz5fNVnZCgytJUX.png)
+Finally, import into your IDE of choice.

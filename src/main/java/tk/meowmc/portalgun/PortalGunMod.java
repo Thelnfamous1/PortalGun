@@ -1,19 +1,15 @@
 package tk.meowmc.portalgun;
 
-import com.google.common.collect.Lists;
 import com.mojang.datafixers.util.Pair;
-import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
-import net.fabricmc.fabric.api.item.v1.FabricItemSettings;
-import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
+import me.Thelnfamous1.portalgun.PortalManipulationHelper;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Registry;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.item.CreativeModeTabs;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.MobCategory;
+import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Rarity;
@@ -22,48 +18,74 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.loading.FMLEnvironment;
+import net.minecraftforge.registries.DeferredRegister;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegistryObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import qouteall.imm_ptl.core.portal.Portal;
-import qouteall.imm_ptl.core.portal.PortalManipulation;
 import qouteall.q_misc_util.my_util.IntBox;
+import tk.meowmc.portalgun.client.PortalgunClient;
 import tk.meowmc.portalgun.config.PortalGunConfig;
 import tk.meowmc.portalgun.entities.CustomPortal;
 import tk.meowmc.portalgun.items.ClawItem;
 import tk.meowmc.portalgun.items.PortalGunItem;
 
 import javax.annotation.Nullable;
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class PortalGunMod implements ModInitializer {
+@Mod(PortalGunMod.MODID)
+public class PortalGunMod /*implements ModInitializer*/ {
     public static final String MODID = "portalgun";
     public static final String KEY = MODID + ":portalgun_portals";
     public static final String MOD_NAME = "PortalGun Mod";
     
     public static final double portalOffset = 0.001;
     public static final double portalOverlayOffset = 0.001;
+
+    private static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, MODID);
     
-    
-    public static final PortalGunItem PORTAL_GUN = new PortalGunItem(new FabricItemSettings().fireResistant().stacksTo(1).rarity(Rarity.EPIC));
-    public static final Item PORTAL_GUN_BODY = new Item(new FabricItemSettings().fireResistant().stacksTo(1).rarity(Rarity.RARE));
-    public static final ClawItem PORTAL_GUN_CLAW = new ClawItem(new FabricItemSettings().fireResistant().stacksTo(1).rarity(Rarity.RARE));
-    
+    public static final RegistryObject<PortalGunItem> PORTAL_GUN = ITEMS.register("portal_gun", () -> new PortalGunItem(new Item.Properties().fireResistant().stacksTo(1).rarity(Rarity.EPIC).tab(CreativeModeTab.TAB_TOOLS)));
+    public static final RegistryObject<Item> PORTAL_GUN_BODY = ITEMS.register("portalgun_body", () -> new Item(new Item.Properties().fireResistant().stacksTo(1).rarity(Rarity.RARE).tab(CreativeModeTab.TAB_MISC)));
+    public static final RegistryObject<ClawItem> PORTAL_GUN_CLAW = ITEMS.register("portalgun_claw", () -> new ClawItem(new Item.Properties().fireResistant().stacksTo(1).rarity(Rarity.RARE).tab(CreativeModeTab.TAB_MISC)));
+
+
+    private static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, MODID);
+    public static RegistryObject<EntityType<CustomPortal>> CUSTOM_PORTAL = ENTITIES.register("custom_portal", () -> EntityType.Builder.of(CustomPortal::new, MobCategory.MISC)
+            .sized(0F, 0F)
+            .build(id("custom_portal").toString()));
+
     public static final ResourceLocation PORTAL1_SHOOT = new ResourceLocation("portalgun:portal1_shoot");
     public static final ResourceLocation PORTAL2_SHOOT = new ResourceLocation("portalgun:portal2_shoot");
     public static final ResourceLocation PORTAL_OPEN = new ResourceLocation("portalgun:portal_open");
     public static final ResourceLocation PORTAL_CLOSE = new ResourceLocation("portalgun:portal_close");
-    
-    public static final SoundEvent PORTAL1_SHOOT_EVENT = SoundEvent.createVariableRangeEvent(PORTAL1_SHOOT);
-    public static final SoundEvent PORTAL2_SHOOT_EVENT = SoundEvent.createVariableRangeEvent(PORTAL2_SHOOT);
-    public static final SoundEvent PORTAL_OPEN_EVENT = SoundEvent.createVariableRangeEvent(PORTAL_OPEN);
-    public static final SoundEvent PORTAL_CLOSE_EVENT = SoundEvent.createVariableRangeEvent(PORTAL_CLOSE);
+
+    private static final DeferredRegister<SoundEvent> SOUNDS = DeferredRegister.create(ForgeRegistries.SOUND_EVENTS, MODID);
+    public static final RegistryObject<SoundEvent> PORTAL1_SHOOT_EVENT = SOUNDS.register(PORTAL1_SHOOT.getPath(), () -> new SoundEvent(PORTAL1_SHOOT));
+    public static final RegistryObject<SoundEvent> PORTAL2_SHOOT_EVENT = SOUNDS.register(PORTAL2_SHOOT.getPath(), () -> new SoundEvent(PORTAL2_SHOOT));
+    public static final RegistryObject<SoundEvent> PORTAL_OPEN_EVENT = SOUNDS.register(PORTAL_OPEN.getPath(), () -> new SoundEvent(PORTAL_OPEN));
+    public static final RegistryObject<SoundEvent> PORTAL_CLOSE_EVENT = SOUNDS.register(PORTAL_CLOSE.getPath(), () -> new SoundEvent(PORTAL_CLOSE));
     
     public static final Logger LOGGER = LogManager.getLogger();
+
+    public PortalGunMod(){
+        this.onInitialize();
+        if(FMLEnvironment.dist == Dist.CLIENT){
+            new PortalgunClient().onInitializeClient();
+        }
+    }
     
     public static ResourceLocation id(String path) {
         return new ResourceLocation(MODID, path);
@@ -128,7 +150,7 @@ public class PortalGunMod implements ModInitializer {
         }
         
         Vec3 endingPoint = startingPoint.add(direction.scale(maxDistance));
-        Optional<Pair<Portal, Vec3>> portalHit = PortalManipulation.raytracePortals(
+        Optional<Pair<Portal, Vec3>> portalHit = PortalManipulationHelper.raytracePortals(
             world, startingPoint, endingPoint, true
         );
         
@@ -194,8 +216,9 @@ public class PortalGunMod implements ModInitializer {
         }
     }
     
-    @Override
+    //@Override
     public void onInitialize() {
+        /*
         Registry.register(BuiltInRegistries.ITEM, id("portal_gun"), PORTAL_GUN);
         Registry.register(BuiltInRegistries.ITEM, id("portalgun_body"), PORTAL_GUN_BODY);
         Registry.register(BuiltInRegistries.ITEM, id("portalgun_claw"), PORTAL_GUN_CLAW);
@@ -206,22 +229,38 @@ public class PortalGunMod implements ModInitializer {
         Registry.register(BuiltInRegistries.SOUND_EVENT, PORTAL2_SHOOT, PORTAL2_SHOOT_EVENT);
         Registry.register(BuiltInRegistries.SOUND_EVENT, PORTAL_OPEN, PORTAL_OPEN_EVENT);
         Registry.register(BuiltInRegistries.SOUND_EVENT, PORTAL_CLOSE, PORTAL_CLOSE_EVENT);
+         */
+        IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
+        ITEMS.register(modEventBus);
+        ENTITIES.register(modEventBus);
+        SOUNDS.register(modEventBus);
         
         PortalGunConfig.register();
         
         // disable block breaking hand swinging
+        /*
         AttackBlockCallback.EVENT.register((player, world, hand, pos, direction) -> {
             ItemStack stack = player.getItemInHand(hand);
-            if (stack.getItem() == PORTAL_GUN) {
+            if (stack.getItem() == PORTAL_GUN.get()) {
                 return InteractionResult.FAIL;
             }
             return InteractionResult.PASS;
         });
+         */
+        MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGHEST, (PlayerInteractEvent.LeftClickBlock event) -> {
+            ItemStack stack = event.getEntity().getItemInHand(event.getHand());
+            if (stack.getItem() == PORTAL_GUN.get()) {
+                event.setCanceled(true);
+                event.setCancellationResult(InteractionResult.FAIL);
+            }
+        });
         
         // add into creative inventory
+        /*
         ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.TOOLS_AND_UTILITIES).register(entries -> {
             entries.accept(PORTAL_GUN);
         });
+         */
     }
     
     

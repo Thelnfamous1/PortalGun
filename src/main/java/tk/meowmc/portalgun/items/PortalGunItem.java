@@ -1,5 +1,6 @@
 package tk.meowmc.portalgun.items;
 
+import me.Thelnfamous1.portalgun.*;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.core.BlockPos;
@@ -23,26 +24,27 @@ import net.minecraft.world.level.dimension.end.EndDragonFight;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.client.extensions.common.IClientItemExtensions;
+import net.minecraftforge.network.PacketDistributor;
 import org.apache.commons.lang3.Validate;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import qouteall.imm_ptl.core.IPGlobal;
 import qouteall.imm_ptl.core.McHelper;
 import qouteall.imm_ptl.core.compat.GravityChangerInterface;
-import qouteall.imm_ptl.core.portal.Portal;
-import qouteall.imm_ptl.core.portal.PortalManipulation;
 import qouteall.q_misc_util.Helper;
-import qouteall.q_misc_util.my_util.AARotation;
+import me.Thelnfamous1.portalgun.AARotation;
 import qouteall.q_misc_util.my_util.IntBox;
-import software.bernie.geckolib.animatable.GeoItem;
-import software.bernie.geckolib.animatable.SingletonGeoAnimatable;
-import software.bernie.geckolib.animatable.client.RenderProvider;
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animatable.instance.SingletonAnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.core.animation.AnimationController;
-import software.bernie.geckolib.core.animation.RawAnimation;
-import software.bernie.geckolib.core.object.PlayState;
+import software.bernie.geckolib3.core.AnimationState;
+import software.bernie.geckolib3.core.IAnimatable;
+import software.bernie.geckolib3.core.PlayState;
+import software.bernie.geckolib3.core.builder.AnimationBuilder;
+import software.bernie.geckolib3.core.builder.ILoopType;
+import software.bernie.geckolib3.core.controller.AnimationController;
+import software.bernie.geckolib3.core.manager.AnimationData;
+import software.bernie.geckolib3.core.manager.AnimationFactory;
+import software.bernie.geckolib3.network.GeckoLibNetwork;
+import software.bernie.geckolib3.network.ISyncable;
+import software.bernie.geckolib3.util.GeckoLibUtil;
 import tk.meowmc.portalgun.PortalGunMod;
 import tk.meowmc.portalgun.PortalGunRecord;
 import tk.meowmc.portalgun.client.renderer.PortalGunItemRenderer;
@@ -53,29 +55,30 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
-public class PortalGunItem extends Item implements GeoItem {
+public class PortalGunItem extends Item implements IAnimatable, ISyncable {
     private static final Logger LOGGER = LogManager.getLogger();
     public static final int COOLDOWN_TICKS = 4;
+    public static final String CONTROLLER_NAME = "portalGunController";
+
+    public final AnimationFactory cache = GeckoLibUtil.createFactory(this);
+
+    private static final AnimationBuilder SHOOT_ANIM = new AnimationBuilder().addAnimation("portal_shoot", ILoopType.EDefaultLoopTypes.PLAY_ONCE);
     
-    public final AnimatableInstanceCache cache = new SingletonAnimatableInstanceCache(this);
-    
-    private static final RawAnimation SHOOT_ANIM = RawAnimation.begin().thenPlay("portal_shoot");
-    
-    private final Supplier<Object> renderProvider = GeoItem.makeRenderer(this);
+    //private final Supplier<Object> renderProvider = GeoItem.makeRenderer(this);
+    public static final int ANIM_OPEN = 0;
     
     public PortalGunItem(Properties settings) {
         super(settings);
-        
-        SingletonGeoAnimatable.registerSyncedAnimatable(this);
+
+        GeckoLibNetwork.registerSyncable(this);
     }
     
     
     // Utilise our own render hook to define our custom renderer
     @Override
-    public void createRenderer(Consumer<Object> consumer) {
-        consumer.accept(new RenderProvider() {
+    public void initializeClient(Consumer<IClientItemExtensions> consumer) {
+        consumer.accept(new IClientItemExtensions() {
             private final PortalGunItemRenderer renderer = new PortalGunItemRenderer();
             
             @Override
@@ -84,24 +87,37 @@ public class PortalGunItem extends Item implements GeoItem {
             }
         });
     }
-    
+
+    /*
     @Override
     public Supplier<Object> getRenderProvider() {
         return this.renderProvider;
     }
+     */
     
     // Register our animation controllers
     @Override
-    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        controllers.add(
-            new AnimationController<>(this, "portalGunController", 1, state -> PlayState.CONTINUE)
-                .triggerableAnim("shoot_anim", SHOOT_ANIM)
+    public void registerControllers(AnimationData controllers) {
+        controllers.addAnimationController(
+            new AnimationController<>(this, CONTROLLER_NAME, 1, state -> PlayState.CONTINUE)
+                //.triggerableAnim("shoot_anim", SHOOT_ANIM)
         );
     }
     
     @Override
-    public AnimatableInstanceCache getAnimatableInstanceCache() {
+    public AnimationFactory getFactory() {
         return this.cache;
+    }
+
+    @Override
+    public void onAnimationSync(int id, int state) {
+        if (state == ANIM_OPEN) {
+            final AnimationController<?> controller = GeckoLibUtil.getControllerForID(this.cache, id, CONTROLLER_NAME);
+            if (controller.getAnimationState() == AnimationState.Stopped) {
+                controller.markNeedsReload();
+                controller.setAnimation(SHOOT_ANIM);
+            }
+        }
     }
     
     @Override
@@ -190,7 +206,7 @@ public class PortalGunItem extends Item implements GeoItem {
             null,
             player.getX(), player.getY(), player.getZ(),
             side == PortalGunRecord.PortalGunSide.blue ?
-                PortalGunMod.PORTAL1_SHOOT_EVENT : PortalGunMod.PORTAL2_SHOOT_EVENT,
+                PortalGunMod.PORTAL1_SHOOT_EVENT.get() : PortalGunMod.PORTAL2_SHOOT_EVENT.get(),
             SoundSource.PLAYERS,
             1.0F, 1.0F
         );
@@ -205,13 +221,19 @@ public class PortalGunItem extends Item implements GeoItem {
         
         Direction rightDir = placement.rotation.transformedX;
         Direction upDir = placement.rotation.transformedY;
-        
+
+        /*
         triggerAnim(
             player,
             GeoItem.getOrAssignId(player.getItemInHand(hand), ((ServerLevel) player.level)),
             "portalGunController", "shoot_anim"
         );
-        
+         */
+        final int id = GeckoLibUtil.guaranteeIDForStack(itemStack, player.getLevel());
+        final PacketDistributor.PacketTarget target = PacketDistributor.TRACKING_ENTITY_AND_SELF
+                .with(() -> player);
+        GeckoLibNetwork.syncAnimation(target, this, id, ANIM_OPEN);
+
         PortalGunRecord record = PortalGunRecord.get();
         
         PortalGunRecord.PortalDescriptor descriptor =
@@ -240,7 +262,7 @@ public class PortalGunItem extends Item implements GeoItem {
         }
         
         if (portal == null) {
-            portal = CustomPortal.entityType.create(world);
+            portal = PortalGunMod.CUSTOM_PORTAL.get().create(world);
             Validate.notNull(portal);
         }
         
@@ -256,8 +278,8 @@ public class PortalGunItem extends Item implements GeoItem {
         portal.airBox = placement.areaBox;
         portal.thisSideUpdateCounter = thisSideInfo == null ? 0 : thisSideInfo.updateCounter();
         portal.otherSideUpdateCounter = otherSideInfo == null ? 0 : otherSideInfo.updateCounter();
-        PortalManipulation.makePortalRound(portal, 20);
-        portal.disableDefaultAnimation();
+        PortalManipulationHelper.makePortalRound(portal, 20);
+        PortalHelper.disableDefaultAnimation(portal);
         
         if (otherSideInfo == null) {
             // it's unpaired, invisible and not teleportable
@@ -270,13 +292,13 @@ public class PortalGunItem extends Item implements GeoItem {
             // it's linked
             portal.setDestinationDimension(otherSideInfo.portalDim());
             portal.setDestination(otherSideInfo.portalPos());
-            portal.setOtherSideOrientation(otherSideInfo.portalOrientation());
+            PortalHelper.setOtherSideOrientation(portal, otherSideInfo.portalOrientation());
             portal.setIsVisible(true);
             portal.teleportable = true;
             player.level.playSound(
                 null,
                 player.getX(), player.getY(), player.getZ(),
-                PortalGunMod.PORTAL_OPEN_EVENT,
+                PortalGunMod.PORTAL_OPEN_EVENT.get(),
                 SoundSource.PLAYERS,
                 1.0F, 1.0F
             );
@@ -322,7 +344,7 @@ public class PortalGunItem extends Item implements GeoItem {
         }
         return true;
     }
-    
+
     private static record PortalPlacement(
         AARotation rotation,
         IntBox areaBox,
@@ -344,7 +366,7 @@ public class PortalGunItem extends Item implements GeoItem {
         Direction playerGravity = GravityChangerInterface.invoker.getGravityDirection(player);
         Direction transformedGravity = raytraceResult.portalsPassingThrough().stream().reduce(
             playerGravity,
-            (gravity, portal) -> portal.getTeleportedGravityDirection(gravity),
+            (gravity, portal) -> PortalHelper.getTeleportedGravityDirection(portal, gravity),
             (g1, g2) -> {throw new RuntimeException();}
         );
         Vec3 viewVector = player.getViewVector(1);
@@ -357,8 +379,8 @@ public class PortalGunItem extends Item implements GeoItem {
         Vec3 viewVectorLocal = GravityChangerInterface.invoker
             .transformWorldToPlayer(transformedGravity, transformedViewVector);
         
-        Direction wallFacingLocal = GravityChangerInterface.invoker
-            .transformDirWorldToPlayer(transformedGravity, wallFacing);
+        Direction wallFacingLocal = GCIInvokerHelper.transformDirWorldToPlayer(GravityChangerInterface.invoker,
+            transformedGravity, wallFacing);
         
         Direction[] upDirCandidates = Helper.getAnotherFourDirections(wallFacingLocal.getAxis());
         
@@ -376,7 +398,7 @@ public class PortalGunItem extends Item implements GeoItem {
         for (Direction upDir : upDirCandidates) {
             AARotation rot = AARotation.getAARotationFromYZ(upDir, wallFacing);
             BlockPos transformedSize = rot.transform(portalAreaSize);
-            IntBox portalArea = IntBox.getBoxByPosAndSignedSize(interactingAirPos, transformedSize);
+            IntBox portalArea = IntBoxHelper.getBoxByPosAndSignedSize(interactingAirPos, transformedSize);
             IntBox wallArea = portalArea.getMoved(wallFacing.getOpposite().getNormal());
             
             if (PortalGunMod.isAreaClear(world, portalArea) &&
@@ -395,8 +417,8 @@ public class PortalGunItem extends Item implements GeoItem {
             CustomPortal.class,
             world,
             wallArea.toRealNumberBox().inflate(0.1),
-            IPGlobal.maxNormalPortalRadius,
-            p -> p.getApproximateFacingDirection() == wallFacing
+                IPGlobalHelper.maxNormalPortalRadius,
+            p -> PortalHelper.getApproximateFacingDirection(p) == wallFacing
                 && IntBox.getIntersect(p.wallBox, wallArea) != null
         );
         return !portals.isEmpty();

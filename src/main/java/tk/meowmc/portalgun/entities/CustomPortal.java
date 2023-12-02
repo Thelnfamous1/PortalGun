@@ -1,11 +1,10 @@
 package tk.meowmc.portalgun.entities;
 
-import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
+import me.Thelnfamous1.portalgun.IntBoxHelper;
+import me.Thelnfamous1.portalgun.PortalHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.MobCategory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -16,11 +15,7 @@ import tk.meowmc.portalgun.PortalGunRecord;
 
 public class CustomPortal extends Portal {
     private static final Logger LOGGER = LogManager.getLogger();
-    
-    public static EntityType<CustomPortal> entityType = FabricEntityTypeBuilder.create(MobCategory.MISC, CustomPortal::new)
-        .dimensions(EntityDimensions.scalable(0F, 0F))
-        .build();
-    
+
     public PortalGunRecord.PortalDescriptor descriptor;
     
     public IntBox wallBox;
@@ -37,8 +32,8 @@ public class CustomPortal extends Portal {
     protected void readAdditionalSaveData(CompoundTag compoundTag) {
         super.readAdditionalSaveData(compoundTag);
         descriptor = PortalGunRecord.PortalDescriptor.fromTag(compoundTag.getCompound("descriptor"));
-        wallBox = IntBox.fromTag(compoundTag.getCompound("wallBox"));
-        airBox = IntBox.fromTag(compoundTag.getCompound("airBox"));
+        wallBox = IntBoxHelper.fromTag(compoundTag.getCompound("wallBox"));
+        airBox = IntBoxHelper.fromTag(compoundTag.getCompound("airBox"));
         thisSideUpdateCounter = compoundTag.getInt("thisSideUpdateCounter");
         otherSideUpdateCounter = compoundTag.getInt("otherSideUpdateCounter");
     }
@@ -47,8 +42,8 @@ public class CustomPortal extends Portal {
     protected void addAdditionalSaveData(CompoundTag compoundTag) {
         super.addAdditionalSaveData(compoundTag);
         compoundTag.put("descriptor", descriptor.toTag());
-        compoundTag.put("wallBox", wallBox.toTag());
-        compoundTag.put("airBox", airBox.toTag());
+        compoundTag.put("wallBox", IntBoxHelper.toTag(wallBox));
+        compoundTag.put("airBox", IntBoxHelper.toTag(airBox));
         compoundTag.putInt("thisSideUpdateCounter", thisSideUpdateCounter);
         compoundTag.putInt("otherSideUpdateCounter", otherSideUpdateCounter);
     }
@@ -116,7 +111,7 @@ public class CustomPortal extends Portal {
                 level.playSound(
                     null,
                     getX(), getY(), getZ(),
-                    PortalGunMod.PORTAL_OPEN_EVENT,
+                    PortalGunMod.PORTAL_OPEN_EVENT.get(),
                     SoundSource.PLAYERS,
                     1.0F, 1.0F
                 );
@@ -126,7 +121,7 @@ public class CustomPortal extends Portal {
             setIsVisible(true);
             setDestination(otherSideInfo.portalPos());
             setDestinationDimension(otherSideInfo.portalDim());
-            setOtherSideOrientation(otherSideInfo.portalOrientation());
+            PortalHelper.setOtherSideOrientation(this, otherSideInfo.portalOrientation());
             reloadAndSyncToClient();
             return;
         }
@@ -136,7 +131,7 @@ public class CustomPortal extends Portal {
         level.playSound(
             null,
             getX(), getY(), getZ(),
-            PortalGunMod.PORTAL_CLOSE_EVENT,
+            PortalGunMod.PORTAL_CLOSE_EVENT.get(),
             SoundSource.PLAYERS,
             1.0F, 1.0F
         );
