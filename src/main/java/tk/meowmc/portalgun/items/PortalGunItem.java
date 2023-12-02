@@ -2,6 +2,7 @@ package tk.meowmc.portalgun.items;
 
 import me.Thelnfamous1.portalgun.*;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -14,6 +15,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -32,7 +34,6 @@ import org.apache.logging.log4j.Logger;
 import qouteall.imm_ptl.core.McHelper;
 import qouteall.imm_ptl.core.compat.GravityChangerInterface;
 import qouteall.q_misc_util.Helper;
-import me.Thelnfamous1.portalgun.AARotation;
 import qouteall.q_misc_util.my_util.IntBox;
 import software.bernie.geckolib3.core.AnimationState;
 import software.bernie.geckolib3.core.IAnimatable;
@@ -84,6 +85,14 @@ public class PortalGunItem extends Item implements IAnimatable, ISyncable, Color
             @Override
             public BlockEntityWithoutLevelRenderer getCustomRenderer() {
                 return this.renderer;
+            }
+
+            @Override
+            public HumanoidModel.@org.jetbrains.annotations.Nullable ArmPose getArmPose(LivingEntity entityLiving, InteractionHand hand, ItemStack itemStack) {
+                if (!entityLiving.swinging && itemStack.getItem() instanceof PortalGunItem) {
+                    return HumanoidModel.ArmPose.CROSSBOW_HOLD;
+                }
+                return null;
             }
         });
     }
