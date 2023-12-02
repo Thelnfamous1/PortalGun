@@ -8,9 +8,9 @@ import tk.meowmc.portalgun.items.PortalGunItem;
 
 public class PortalGunItemRenderer extends GeoItemRenderer<PortalGunItem> {
 
-    public static final ResourceLocation MODEL = new ResourceLocation(PortalGunMod.MODID, "geo/item/portalgun.geo.json");
-    public static final ResourceLocation TEXTURE = new ResourceLocation(PortalGunMod.MODID, "textures/item/portalgun.png");
-    public static final ResourceLocation ANIMATION = new ResourceLocation(PortalGunMod.MODID, "animations/item/portalgun.animation.json");
+    public static final ResourceLocation MODEL = PortalGunMod.id("geo/item/portalgun.geo.json");
+    public static final ResourceLocation TEXTURE = PortalGunMod.id("textures/item/portalgun.png");
+    public static final ResourceLocation ANIMATION = PortalGunMod.id("animations/item/portalgun.animation.json");
 
     public PortalGunItemRenderer() {
         super(new AnimatedGeoModel<>() {

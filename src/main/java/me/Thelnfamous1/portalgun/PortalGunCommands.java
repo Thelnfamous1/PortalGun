@@ -6,6 +6,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import net.minecraft.ChatFormatting;
+import net.minecraft.Util;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.ColorArgument;
@@ -24,7 +25,11 @@ import java.util.function.Function;
 
 public class PortalGunCommands {
 
-    private static final SimpleCommandExceptionType NOT_HOLDING_PORTAL_GUN = new SimpleCommandExceptionType(Component.translatable("commands.portalgun.customportalcolors.not_holding_portal_gun"));
+    public static final String NOT_HOLDING_PORTAL_GUN_KEy = Util.makeDescriptionId("commands", PortalGunMod.id("customportalcolors/not_holding_portal_gun"));
+    private static final SimpleCommandExceptionType NOT_HOLDING_PORTAL_GUN = new SimpleCommandExceptionType(Component.translatable(NOT_HOLDING_PORTAL_GUN_KEy));
+    public static final String SET_CUSTOM_PORTAL_COLOR_KEY = Util.makeDescriptionId("commands", PortalGunMod.id("customportalcolors/set"));
+    public static final String CLEAR_ALL_CUSTOM_PORTAL_COLORS_KEY = Util.makeDescriptionId("commands", PortalGunMod.id("customportalcolors/clear/all"));
+    public static final String CLEAR_CUSTOM_PORTAL_COLOR_KEY = Util.makeDescriptionId("commands", PortalGunMod.id("customportalcolors/clear"));
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher){
         dispatcher.register(Commands.literal(PortalGunMod.MODID)
@@ -79,7 +84,11 @@ public class PortalGunCommands {
         ItemStack portalGun = player.getItemInHand(hand);
         if(portalGun.getItem() instanceof ColoredPortalGun cpg){
             cpg.setCustomPortalColorForSide(portalGun, color, side);
-            context.getSource().sendSuccess(Component.translatable(String.format("%s.%s", "commands.portalgun.customportalcolors.set", side.name()), color, portalGun.getDisplayName()), false);
+            context.getSource().sendSuccess(Component.translatable(SET_CUSTOM_PORTAL_COLOR_KEY,
+                            ColoredPortalGun.getSideDisplayName(side),
+                            ColoredPortalGun.getColorName(color),
+                            portalGun.getDisplayName()),
+                    false);
             return 1;
         } else{
             throw NOT_HOLDING_PORTAL_GUN.create();
@@ -94,7 +103,9 @@ public class PortalGunCommands {
             for(PortalGunRecord.PortalGunSide side : PortalGunRecord.PortalGunSide.values()){
                 cpg.clearCustomPortalColorForSide(portalGun, side);
             }
-            context.getSource().sendSuccess(Component.translatable("commands.portalgun.customportalcolors.clear.all", portalGun.getDisplayName()), false);
+            context.getSource().sendSuccess(Component.translatable(CLEAR_ALL_CUSTOM_PORTAL_COLORS_KEY,
+                            portalGun.getDisplayName()),
+                    false);
             return 1;
         } else{
             throw NOT_HOLDING_PORTAL_GUN.create();
@@ -108,7 +119,10 @@ public class PortalGunCommands {
         ItemStack portalGun = player.getItemInHand(hand);
         if(portalGun.getItem() instanceof ColoredPortalGun cpg){
             cpg.clearCustomPortalColorForSide(portalGun, side);
-            context.getSource().sendSuccess(Component.translatable(String.format("%s.%s", "commands.portalgun.customportalcolors.clear", side.name()), portalGun.getDisplayName()), false);
+            context.getSource().sendSuccess(Component.translatable(CLEAR_CUSTOM_PORTAL_COLOR_KEY,
+                            ColoredPortalGun.getSideDisplayName(side),
+                            portalGun.getDisplayName()),
+                    false);
             return 1;
         } else{
             throw NOT_HOLDING_PORTAL_GUN.create();
