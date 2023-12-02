@@ -26,7 +26,7 @@ public interface ColoredPortalGun {
 
     default boolean hasCustomPortalColorForSide(ItemStack portalGun, PortalGunRecord.PortalGunSide side) {
         CompoundTag customPortalColors = portalGun.getTagElement(CUSTOM_PORTAL_COLORS_TAG);
-        return customPortalColors != null && customPortalColors.contains(side.name(), 99);
+        return customPortalColors != null && customPortalColors.contains(side.name(), Tag.TAG_ANY_NUMERIC);
     }
 
     default int getPortalColorForSide(ItemStack portalGun, PortalGunRecord.PortalGunSide side) {
@@ -51,7 +51,7 @@ public interface ColoredPortalGun {
             for(PortalGunRecord.PortalGunSide side : PortalGunRecord.PortalGunSide.values()){
                 if (customPortalColors.contains(side.name(), Tag.TAG_ANY_NUMERIC)) {
                     tooltip.add(Component.translatable(
-                            stack.getDescriptionId() + side.name() + ".color",
+                            String.format("%s.%s.%s", stack.getDescriptionId(), side.name(), "color"),
                             String.format(Locale.ROOT, "#%06X",
                                     customPortalColors.getInt(side.name())))
                             .withStyle(ChatFormatting.GRAY));
