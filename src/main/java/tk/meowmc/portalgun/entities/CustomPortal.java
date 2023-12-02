@@ -4,9 +4,6 @@ import me.Thelnfamous1.portalgun.ColoredPortal;
 import me.Thelnfamous1.portalgun.IntBoxHelper;
 import me.Thelnfamous1.portalgun.PortalHelper;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.syncher.EntityDataAccessor;
-import net.minecraft.network.syncher.EntityDataSerializers;
-import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.EntityType;
 import org.apache.logging.log4j.LogManager;
@@ -17,10 +14,7 @@ import qouteall.q_misc_util.my_util.IntBox;
 import tk.meowmc.portalgun.PortalGunMod;
 import tk.meowmc.portalgun.PortalGunRecord;
 
-import java.util.OptionalInt;
-
 public class CustomPortal extends Portal implements ColoredPortal {
-    private static final EntityDataAccessor<OptionalInt> DATA_COLOR = SynchedEntityData.defineId(CustomPortal.class, EntityDataSerializers.OPTIONAL_UNSIGNED_INT);
     private static final Logger LOGGER = LogManager.getLogger();
 
     public PortalGunRecord.PortalDescriptor descriptor;
@@ -30,15 +24,11 @@ public class CustomPortal extends Portal implements ColoredPortal {
     
     public int thisSideUpdateCounter = 0;
     public int otherSideUpdateCounter = 0;
+    private boolean hasCustomPortalColor = false;
+    private int customPortalColor = 0;
     
     public CustomPortal(@NotNull EntityType<?> entityType, net.minecraft.world.level.Level world) {
         super(entityType, world);
-    }
-
-    @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.getEntityData().define(DATA_COLOR, OptionalInt.empty());
     }
 
     @Override
@@ -154,22 +144,24 @@ public class CustomPortal extends Portal implements ColoredPortal {
 
     @Override
     public boolean hasCustomPortalColor(){
-        return this.entityData.get(DATA_COLOR).isPresent();
+        return this.hasCustomPortalColor;
     }
 
     @Override
     public int getPortalColor(){
-        return this.entityData.get(DATA_COLOR).orElse(this.descriptor.side().getColorInt());
+        return this.hasCustomPortalColor ? this.customPortalColor : this.descriptor.side().getColorInt();
     }
 
     @Override
     public void setCustomPortalColor(int portalColor){
-        this.entityData.set(DATA_COLOR, OptionalInt.of(portalColor));
+        this.hasCustomPortalColor = true;
+        this.customPortalColor = portalColor;
     }
 
     @Override
     public void clearCustomPortalColor(){
-        this.entityData.set(DATA_COLOR, OptionalInt.empty());
+        this.hasCustomPortalColor = false;
+        this.customPortalColor = 0;
     }
 
     

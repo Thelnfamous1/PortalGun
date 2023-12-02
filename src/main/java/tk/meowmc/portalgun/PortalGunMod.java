@@ -1,8 +1,14 @@
 package tk.meowmc.portalgun;
 
 import com.mojang.datafixers.util.Pair;
+import me.Thelnfamous1.portalgun.DyeColorArgument;
+import me.Thelnfamous1.portalgun.PortalGunCommands;
 import me.Thelnfamous1.portalgun.PortalManipulationHelper;
+import net.minecraft.commands.synchronization.ArgumentTypeInfo;
+import net.minecraft.commands.synchronization.ArgumentTypeInfos;
+import net.minecraft.commands.synchronization.SingletonArgumentInfo;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.InteractionResult;
@@ -20,6 +26,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -77,7 +84,10 @@ public class PortalGunMod /*implements ModInitializer*/ {
     public static final RegistryObject<SoundEvent> PORTAL2_SHOOT_EVENT = SOUNDS.register(PORTAL2_SHOOT.getPath(), () -> new SoundEvent(PORTAL2_SHOOT));
     public static final RegistryObject<SoundEvent> PORTAL_OPEN_EVENT = SOUNDS.register(PORTAL_OPEN.getPath(), () -> new SoundEvent(PORTAL_OPEN));
     public static final RegistryObject<SoundEvent> PORTAL_CLOSE_EVENT = SOUNDS.register(PORTAL_CLOSE.getPath(), () -> new SoundEvent(PORTAL_CLOSE));
-    
+
+    private static final DeferredRegister<ArgumentTypeInfo<?, ?>> COMMAND_ARGUMENT_TYPES = DeferredRegister.create(Registry.COMMAND_ARGUMENT_TYPE_REGISTRY, MODID);
+    private static final RegistryObject<SingletonArgumentInfo<DyeColorArgument>> DYE_COLOR_COMMAND_ARGUMENT_TYPE = COMMAND_ARGUMENT_TYPES.register("dye_color", () ->
+            ArgumentTypeInfos.registerByClass(DyeColorArgument.class, SingletonArgumentInfo.contextFree(DyeColorArgument::color)));
     public static final Logger LOGGER = LogManager.getLogger();
 
     public PortalGunMod(){
@@ -234,6 +244,7 @@ public class PortalGunMod /*implements ModInitializer*/ {
         ITEMS.register(modEventBus);
         ENTITIES.register(modEventBus);
         SOUNDS.register(modEventBus);
+        COMMAND_ARGUMENT_TYPES.register(modEventBus);
         
         PortalGunConfig.register();
         
@@ -261,6 +272,9 @@ public class PortalGunMod /*implements ModInitializer*/ {
             entries.accept(PORTAL_GUN);
         });
          */
+        MinecraftForge.EVENT_BUS.addListener((RegisterCommandsEvent event) -> {
+            PortalGunCommands.register(event.getDispatcher());
+        });
     }
     
     

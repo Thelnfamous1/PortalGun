@@ -21,6 +21,8 @@ public interface ColoredPortalGun {
     static void colorPortal(CustomPortal portal, ItemStack portalGun, PortalGunRecord.PortalGunSide side){
         if(portalGun.getItem() instanceof ColoredPortalGun cpg && cpg.hasCustomPortalColorForSide(portalGun, side)){
             portal.setCustomPortalColor(cpg.getPortalColorForSide(portalGun, side));
+        } else{
+            portal.clearCustomPortalColor();
         }
     }
 
@@ -39,9 +41,9 @@ public interface ColoredPortalGun {
     }
 
     default void clearCustomPortalColorForSide(ItemStack portalGun, PortalGunRecord.PortalGunSide side) {
-        CompoundTag display = portalGun.getTagElement(CUSTOM_PORTAL_COLORS_TAG);
-        if (display != null && display.contains(side.name())) {
-            display.remove(side.name());
+        CompoundTag customPortalColors = portalGun.getTagElement(CUSTOM_PORTAL_COLORS_TAG);
+        if (customPortalColors != null && customPortalColors.contains(side.name())) {
+            customPortalColors.remove(side.name());
         }
     }
 

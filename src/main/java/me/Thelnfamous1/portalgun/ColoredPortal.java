@@ -16,6 +16,8 @@ public interface ColoredPortal {
     default void readCustomPortalColor(CompoundTag compoundTag){
         if (compoundTag.contains(CUSTOM_PORTAL_COLOR_TAG, Tag.TAG_ANY_NUMERIC)) {
             this.setCustomPortalColor(compoundTag.getInt(CUSTOM_PORTAL_COLOR_TAG));
+        } else{
+            this.clearCustomPortalColor();
         }
     }
 

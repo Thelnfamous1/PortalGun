@@ -266,6 +266,8 @@ public class PortalGunItem extends Item implements IAnimatable, ISyncable, Color
             portal = PortalGunMod.CUSTOM_PORTAL.get().create(world);
             Validate.notNull(portal);
         }
+
+        ColoredPortalGun.colorPortal(portal, itemStack, side);
         
         portal.setOriginPos(newPortalOrigin);
         portal.setOrientationAndSize(
@@ -315,7 +317,6 @@ public class PortalGunItem extends Item implements IAnimatable, ISyncable, Color
         );
         record.data.put(descriptor, thisSideInfo);
         record.setDirty();
-        ColoredPortalGun.colorPortal(portal, itemStack, side);
         
         if (!isExistingPortal) {
             McHelper.spawnServerEntity(portal);
