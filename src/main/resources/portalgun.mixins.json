@@ -5,6 +5,8 @@
   "compatibilityLevel": "JAVA_17",
   "refmap": "portalgun.refmap.json",
   "mixins": [
+    "CollisionHelperMixin",
+    "PortalMixin"
   ],
   "client": [
     "MixinImmPtlBlockManipulationClient"
